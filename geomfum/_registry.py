@@ -262,3 +262,11 @@ class HierarchicalMeshRegistry(WhichRegistry):
 
 
 register_hierarchical_mesh = HierarchicalMeshRegistry.register
+
+
+
+class LearnedDescriptorsRegistry(WhichRegistry):
+    MAP = {}
+
+
+register_learned_descriptors = LearnedDescriptorsRegistry.register
