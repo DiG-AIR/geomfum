@@ -62,3 +62,8 @@ register_learned_descriptors(
     "diffusion_net", "DiffusionNetDescriptor", requires="torch", as_default=True
 )
 
+register_learned_descriptors(
+    "point_net", "PointNetDescriptor", requires="torch", as_default=True
+)
+
+

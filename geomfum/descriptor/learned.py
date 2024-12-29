@@ -26,3 +26,13 @@ class LearnedDescriptor(WhichRegistryMixins, Descriptor):
         basis : mesh (or data).
             Basis.
         """
+        @abc.abstractmethod
+    def load(self, path):
+        """Compute descriptor.
+
+        Parameters
+        ----------
+        path : pathfile.
+            Basis.
+        """
+
