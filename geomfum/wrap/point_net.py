@@ -24,3 +24,7 @@ class PointNetDescriptor(Descriptor):
                 point_cloud = point_cloud.unsqueeze(0)
             self.features = self.model(point_cloud.transpose(2,1))
         return self.features
+    
+    def load(self, path):
+        #load model parameters from the provided path
+        self.model.load_state_dict(torch.load(path))
