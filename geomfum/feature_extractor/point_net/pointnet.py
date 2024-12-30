@@ -1,5 +1,5 @@
+
 import torch
-#pacchetto torch.nn per creare la rete di convoluzione
 import torch.nn as nn
 import torch.nn.parallel
 import torch.utils.data
@@ -7,30 +7,28 @@ from torch.autograd import Variable
 import numpy as np
 import torch.nn.functional as F
 
-############ BASIS NETWORK
 
-#costruisco le architetture
 class PointNetfeat(nn.Module):
-    #costruzione dell'architettura
+
     def __init__(self, global_feat = True, feature_transform = False):
+
         super(PointNetfeat, self).__init__()
-        #self.conv rappresentano i livelli di convoluzione
-        #torch.nn.Conv1d(in_channels, out_channels, kernel_size)
+
         self.conv1 = torch.nn.Conv1d(3, 64, 1)
         self.conv2 = torch.nn.Conv1d(64, 64, 1)
         self.conv4 = torch.nn.Conv1d(64, 128, 1)
         self.conv41 = torch.nn.Conv1d(128, 128, 1)
         self.conv5 = torch.nn.Conv1d(128, 1024, 1)
-        #Linear sono i liveli finali della rete
+
         self.dense1 = torch.nn.Linear(1024,256)
         self.dense2 = torch.nn.Linear(256,256)
 
         self.global_feat = global_feat
         self.feature_transform = feature_transform
-    #funzione di forward(self, input)
+
     def forward(self, x):
+
         n_pts = x.size()[2]
-        #funzioni di attivazione
         x = F.relu((self.conv1(x)))
         x = F.relu((self.conv2(x)))
         x = F.relu((self.conv4(x)))
@@ -47,8 +45,8 @@ class PointNetfeat(nn.Module):
         x = x.view(-1, 256, 1).repeat(1, 1, n_pts)
         return torch.cat([x, pointfeat], 1), trans, trans_feat
 
-#architettura per le basi
 class PointNet(nn.Module):
+    
     def __init__(self, k = 128, feature_transform=False):
         super(PointNet, self).__init__()
         self.k = k
@@ -67,10 +65,8 @@ class PointNet(nn.Module):
         x = F.relu((self.conv2(x)))
         x = F.relu((self.conv2c(x)))
         x = self.m(x)
-        #x = F.relu(self.bn3(self.conv3(x)))
         x = self.conv3(x)
         x = x.transpose(2,1).contiguous()
-        # x = F.log_softmax(x.view(-1,self.k), dim=-1)
         x = x.view(batchsize, n_pts, self.k)
         return x
 
