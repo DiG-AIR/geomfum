@@ -2,6 +2,7 @@
 This is the wrapper of the diffusion net model.
 #TODO: Add references
 #TODO: For the moment we assume to have the implementation of Diffusionet somewhere in the code
+
 """
 
 from geomfum.feature_extractor.diffusion_net.diffusion_network import DiffusionNet
@@ -10,7 +11,8 @@ import torch
 
 class DiffusionNetDescriptor(Descriptor):
     """Descriptor representing the output of DiffusionNet."""
-
+    #TODO: Add the description of the parameters
+    #TODO: FInd a better way to set the parameters
     def __init__(self, in_channels=3, out_channels=128, hidden_channels=128, n_block=4, last_activation=None, 
                  mlp_hidden_channels=None, output_at='vertices', dropout=True, with_gradient_features=True, 
                  with_gradient_rotations=True, diffusion_method='spectral', k_eig=128, cache_dir=None, 
