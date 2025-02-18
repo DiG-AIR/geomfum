@@ -53,8 +53,8 @@ class ForwardFunctionalMap(nn.Module):
         
         #load evals and evecs adn pinv
         
-        evals_x,_ = mesh_x.basis.vals[:k1][None].to(torch.float32).to(device)
-        evals_y,_ = mesh_y.basis.vals[:k2][None].to(torch.float32).to(device)
+        evals_x = mesh_x.basis.vals[:k1][None].to(torch.float32).to(device)
+        evals_y = mesh_y.basis.vals[:k2][None].to(torch.float32).to(device)
         
         evecs_trans_x = mesh_x.basis.pinv[:k1,:][None].to(torch.float32).to(device)
         evecs_trans_y = mesh_y.basis.pinv[:k2,:][None].to(torch.float32).to(device)

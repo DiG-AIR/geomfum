@@ -16,6 +16,8 @@ class Shape(abc.ABC):
         self.laplacian = Laplacian(self)
 
         self.landmark_indices = None
+        
+        self.device = 'cpu'
 
     def equip_with_operator(self, name, Operator, allow_overwrite=True, **kwargs):
         """Equip with operator."""
