@@ -146,3 +146,7 @@ class TriangleMesh(Shape):
         """Convert to torch tensors."""
         self.vertices = torch.tensor(self.vertices)
         self.faces = torch.tensor(self.faces)
+    def to_numpy(self):
+        """Convert to numpy array."""
+        self.vertices = self.vertices.numpy()
+        self.faces = self.faces.numpy()

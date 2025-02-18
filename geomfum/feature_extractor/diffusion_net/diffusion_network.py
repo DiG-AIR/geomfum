@@ -1,5 +1,5 @@
 # The implementation of DiffusionNet is adapted from official implementation: https://github.com/nmwsharp/diffusion-net
-# This code jhas beed written by Dongliang CAO https://github.com/dongliangcao/Unsupervised-Learning-of-Robust-Spectral-Shape-Matching/
+# This code has beed written by Dongliang CAO https://github.com/dongliangcao/Unsupervised-Learning-of-Robust-Spectral-Shape-Matching/
 import torch
 import torch.nn as nn
 

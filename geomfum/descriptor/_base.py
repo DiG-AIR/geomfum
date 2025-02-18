@@ -37,3 +37,32 @@ class SpectralDescriptor(Descriptor, abc.ABC):
         domain : array-like, shape=[n_domain]
             Domain points for computation.
         """
+
+class LearnedDescriptor(Descriptor, abc.ABC):
+    """Descriptor representing the output of a feature extractor."""
+
+    def __init__(self, n_features=128):
+        self.n_features = n_features
+        self.features = None
+        self.trained = False
+
+    @abc.abstractmethod
+    def __call__(self, mesh):
+        """Compute descriptor.
+
+        Parameters
+        ----------
+        basis : mesh (or data).
+            Basis.
+        """
+    
+    @abc.abstractmethod
+    def load(self, path):
+        """load learned parameters.
+
+        Parameters
+        ----------
+        path : pathfile.
+            Basis.
+        """
+

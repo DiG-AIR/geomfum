@@ -7,7 +7,7 @@ import numpy as np
 import geomfum.linalg as la
 from geomfum.descriptor._base import SpectralDescriptor
 
-from ._base import Descriptor
+from ._base import Descriptor, LearnedDescriptor
 
 
 class Subsampler(abc.ABC):
@@ -72,10 +72,15 @@ class DescriptorPipeline:
         for step in self.steps:
             if isinstance(step, SpectralDescriptor):
                 descr = self._update_descr(descr, step(shape.basis))
+  
+            elif isinstance(step, LearnedDescriptor):
+                shape.to_torch()
+                descr = self._update_descr(descr, step(shape))
+                shape.to_numpy()
 
             elif isinstance(step, Descriptor):
                 descr = self._update_descr(descr, step(shape))
-
+                
             elif isinstance(step, Subsampler):
                 descr = step(descr)
 

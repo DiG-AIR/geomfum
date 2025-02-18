@@ -1,15 +1,14 @@
 """
-This is the wrapper of the diffusion net model.
-#TODO: Add references
+This is the wrapper of the diffusion net model from https://github.com/nmwsharp/diffusion-net
 #TODO: For the moment we assume to have the implementation of Diffusionet somewhere in the code
 
 """
 
 from geomfum.feature_extractor.diffusion_net.diffusion_network import DiffusionNet
-from geomfum.descriptor import Descriptor
+from geomfum.descriptor._base import LearnedDescriptor
 import torch
 
-class DiffusionNetDescriptor(Descriptor):
+class DiffusionNetDescriptor(LearnedDescriptor):
     """Descriptor representing the output of DiffusionNet."""
     #TODO: Add the description of the parameters
     #TODO: FInd a better way to set the parameters
@@ -42,13 +41,14 @@ class DiffusionNetDescriptor(Descriptor):
 
         self.n_features = self.out_channels
         self.device = device
+        
     def __call__(self,mesh):
 
-        #TODO: add to convert the mesh to tensor
-        v=torch.tensor(mesh.vertices)[None].to(torch.float32)
-        f=torch.tensor(mesh.faces)[None].to(torch.int32)
+        v=mesh.vertices[None].to(torch.float32)
+        f=mesh.faces[None].to(torch.int32)
         self.features = self.model(v,f)
-        return self.features
+        # for the moment the function outputs a numpy array of dimension DxN
+        return self.features[0].T.detach().numpy()
     
     def load_from_path(self,path):
         #load model parameters from the provided path

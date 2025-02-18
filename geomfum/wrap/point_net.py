@@ -5,10 +5,10 @@ This is the wrapper of the PointNet model.
 """
 
 from geomfum.feature_extractor.point_net.pointnet import PointNet  
-from geomfum.descriptor import Descriptor
+from geomfum.descriptor._base import LearnedDescriptor
 import torch
 
-class PointNetDescriptor(Descriptor):
+class PointNetDescriptor(LearnedDescriptor):
     """Descriptor representing the output of PointNet."""
 
     def __init__(self, k=128,device=torch.device('cpu'), feature_transform=False):
@@ -20,12 +20,13 @@ class PointNetDescriptor(Descriptor):
     def __call__(self, mesh):
         """Process the point cloud data using PointNet."""
         with torch.no_grad():
-            point_cloud = torch.tensor(mesh.vertices, dtype=torch.float32)
+            point_cloud = mesh.vertices.to(torch.float32)
             if point_cloud.ndimension() == 2:
                 point_cloud = point_cloud.unsqueeze(0)
             self.features = self.model(point_cloud.transpose(2,1))
-        return self.features
-    
+        # for the moment the function outputs a numpy array of dimension DxN
+        return self.features[0].T.numpy()
+
     def load_from_path(self, path):
         #load model parameters from the provided path
         self.model.load_state_dict(torch.load(path,map_location=torch.device('cpu')))
