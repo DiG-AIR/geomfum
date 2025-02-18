@@ -25,7 +25,7 @@ class PointNetDescriptor(LearnedDescriptor):
                 point_cloud = point_cloud.unsqueeze(0)
             self.features = self.model(point_cloud.transpose(2,1))
         # for the moment the function outputs a numpy array of dimension DxN
-        return self.features[0].T.numpy()
+        return self.features
 
     def load_from_path(self, path):
         #load model parameters from the provided path

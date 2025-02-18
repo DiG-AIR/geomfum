@@ -75,7 +75,7 @@ class DescriptorPipeline:
   
             elif isinstance(step, LearnedDescriptor):
                 shape.to_torch()
-                descr = self._update_descr(descr, step(shape))
+                descr = self._update_descr(descr, step(shape)[0].detach().cpu().numpy().transpose(1,0))
                 shape.to_numpy()
 
             elif isinstance(step, Descriptor):

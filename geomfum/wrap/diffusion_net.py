@@ -48,8 +48,7 @@ class DiffusionNetDescriptor(LearnedDescriptor):
         f=mesh.faces[None].to(torch.int32)
         self.features = self.model(v,f)
         # for the moment the function outputs a numpy array of dimension DxN
-        return self.features[0].T.detach().numpy()
-    
+        return self.features
     def load_from_path(self,path):
         #load model parameters from the provided path
         self.model.load_state_dict(torch.load(path,map_location=self.device))

@@ -3,7 +3,8 @@
 import abc
 
 import geomfum.linalg as la
-
+import torch
+import numpy as np
 
 class Basis(abc.ABC):
     """Basis."""
@@ -144,9 +145,38 @@ class LaplaceEigenBasis(EigenBasis):
             Inverse of the eigenvectors matrix.
         """
         if self._pinv is None:
-            self._pinv = self.vecs.T @ self._shape.laplacian.mass_matrix
+            #if self._shape.laplacian.mass_matrix is None:
+            #i need to check if something is a tensor or a numpy array
+            if isinstance(self.vecs, torch.Tensor):
+                    self._pinv = torch.linalg.pinv(self.vecs)
+            else:
+                    self._pinv = np.linalg.pinv(self.vecs)
+            #else:
+            #    self._pinv = self.vecs.T @ self._shape.laplacian.mass_matrix
         return self._pinv
+    @pinv.setter
+    def pinv(self, value):
+        """Set number of values to use on computations.
 
+        Parameters
+        ----------
+        use_k : int
+            Number of values to use on computations.
+        """
+        self._pinv = value
+
+
+    def to_torch(self,device):
+        if not isinstance(self.vecs, torch.Tensor):
+            self.full_vals=torch.tensor(self.full_vals).to(device)
+            self.full_vecs=torch.tensor(self.full_vecs).to(device)
+        
+    def to_numpy(self):
+        if isinstance(self.vecs, torch.Tensor):
+            self.full_vals=(self.full_vals).cpu().numpy()
+            self.full_vecs=(self.full_vecs).cpu().numpy()
+            
+    
     def truncate(self, spectrum_size):
         """Truncate basis.
 
@@ -197,3 +227,4 @@ class LaplaceEigenBasis(EigenBasis):
             Landmarks.
         """
         return self._shape.landmark_indices
+
