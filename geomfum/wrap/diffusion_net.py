@@ -6,16 +6,16 @@ This is the wrapper of the diffusion net model from https://github.com/nmwsharp/
 
 from geomfum.feature_extractor.diffusion_net.diffusion_network import DiffusionNet
 from geomfum.descriptor._base import LearnedDescriptor
+from geomfum.shape.mesh import TriangleMesh
 import torch
 
 class DiffusionNetDescriptor(LearnedDescriptor):
     """Descriptor representing the output of DiffusionNet."""
-    #TODO: Add the description of the parameters
-    #TODO: FInd a better way to set the parameters
+    
     def __init__(self, in_channels=3, out_channels=128, hidden_channels=128, n_block=4, last_activation=None, 
                  mlp_hidden_channels=None, output_at='vertices', dropout=True, with_gradient_features=True, 
                  with_gradient_rotations=True, diffusion_method='spectral', k_eig=128, cache_dir=None, 
-                 input_type='xyz',device=torch.device('cpu')):
+                 input_type='xyz', device=torch.device('cpu')):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.hidden_channels = hidden_channels
@@ -42,17 +42,27 @@ class DiffusionNetDescriptor(LearnedDescriptor):
         self.n_features = self.out_channels
         self.device = device
         
-    def __call__(self,mesh):
-
-        v=mesh.vertices[None].to(torch.float32)
-        f=mesh.faces[None].to(torch.int32)
-        self.features = self.model(v,f)
-        # for the moment the function outputs a numpy array of dimension DxN
-        return self.features
-    def load_from_path(self,path):
-        #load model parameters from the provided path
-        self.model.load_state_dict(torch.load(path,map_location=self.device))
+    def __call__(self, mesh):
+        """Forward pass through the DiffusionNet model, supports both TriangleMesh and dictionaries."""
         
-    def load(self,pre_model):
-        #load model parameters from the provided model
+        if isinstance(mesh, dict):
+            # If input is a dictionary containing tensors
+            v = mesh['vertices'].to(torch.float32)  # Add batch dimension
+            f = mesh['faces'].to(torch.int32)     # Add batch dimension
+        elif isinstance(mesh, TriangleMesh):
+            # If input is a TriangleMesh object, extract vertices and faces
+            v = mesh.vertices[None].to(torch.float32)
+            f = mesh.faces[None].to(torch.int32)
+        else:
+            raise TypeError("Input must be either a TriangleMesh or a dictionary containing 'vertices' and 'faces'")
+
+        self.features = self.model(v, f)
+        return self.features
+
+    def load_from_path(self, path):
+        """Load model parameters from the provided path."""
+        self.model.load_state_dict(torch.load(path, map_location=self.device))
+
+    def load(self, pre_model):
+        """Load model parameters from the provided pre-trained model."""
         self.model.load_state_dict(pre_model)
