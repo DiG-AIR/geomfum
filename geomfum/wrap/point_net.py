@@ -6,7 +6,9 @@ This is the wrapper of the PointNet model.
 
 from geomfum.feature_extractor.point_net.pointnet import PointNet  
 from geomfum.descriptor._base import LearnedDescriptor
+from geomfum.shape.mesh import TriangleMesh
 import torch
+
 
 class PointNetDescriptor(LearnedDescriptor):
     """Descriptor representing the output of PointNet."""
@@ -19,8 +21,18 @@ class PointNetDescriptor(LearnedDescriptor):
 
     def __call__(self, mesh):
         """Process the point cloud data using PointNet."""
+        if isinstance(mesh, dict):
+            # If input is a dictionary containing tensors
+            v = mesh['vertices'].to(torch.float32) 
+        elif isinstance(mesh, TriangleMesh):
+        # If input is a TriangleMesh object, extract vertices and faces
+            v = mesh.vertices[None].to(torch.float32) #Add batch dimension
+        else:
+            raise TypeError("Input must be either a TriangleMesh or a dictionary containing 'vertices' and 'faces'")
+
         with torch.no_grad():
-            point_cloud = mesh.vertices.to(torch.float32)
+            point_cloud = v.to(torch.float32)
+            #ADDITIONAL CHECK ON THE DIMENSION
             if point_cloud.ndimension() == 2:
                 point_cloud = point_cloud.unsqueeze(0)
             self.features = self.model(point_cloud.transpose(2,1))

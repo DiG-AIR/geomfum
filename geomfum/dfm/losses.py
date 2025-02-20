@@ -32,6 +32,7 @@ class LossManager:
     def compute_loss(self, **kwargs):
         total_loss = 0
         loss_dict = {}
+        
 
         for loss_name, (loss_fn, weight) in self.losses.items():
             required_inputs = {key: kwargs[key] for key in loss_fn.required_inputs}
@@ -109,3 +110,22 @@ class LaplacianCommutativityLoss(nn.Module):
     def forward(self, Cxy, evals_x, evals_y):
         metric = SquaredFrobeniusLoss()
         return self.weight * metric(torch.einsum('abc,ac->abc', Cxy, evals_x), torch.einsum('ab,abc->abc', evals_y, Cxy))
+
+
+@LossRegistry.register("Fmap_Supervision")
+class Fmap_Supervision(nn.Module):
+    """
+    Computes the Laplacian Commutativity error of a functional map
+    Inputs:
+    - fmap: Functional map
+    - evals1: Eigenvalues of the first shape
+    - evals2: Eigenvalues of the second shape
+    """
+    def __init__(self, weight=1):
+        super().__init__()
+        self.weight = weight
+
+    required_inputs = ["Cxy", "Cxy_sup"]
+    def forward(self, Cxy, Cxy_sup):
+        metric = SquaredFrobeniusLoss()
+        return self.weight * metric(Cxy,Cxy_sup)

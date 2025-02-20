@@ -1,7 +1,6 @@
 """
 This is the wrapper of the diffusion net model from https://github.com/nmwsharp/diffusion-net
 #TODO: For the moment we assume to have the implementation of Diffusionet somewhere in the code
-
 """
 
 from geomfum.feature_extractor.diffusion_net.diffusion_network import DiffusionNet

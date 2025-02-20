@@ -8,8 +8,6 @@ In Deep Functional Maps, the fiunctional map is computed by the forward pass com
 The algorithm that performs this pass is typically called FunctionalMapNet
 """
 
-#we define an abstract class for the forward pass. Depending on the choices, the forward pass can be implemented in different ways
-
 # TODO: Add bidirectionality parameter
 
 import torch
@@ -33,13 +31,11 @@ class ForwardFunctionalMap(nn.Module):
     def forward(self, mesh_x, mesh_y, feat_x, feat_y):
         """
         Forward pass to compute functional map.
-        
         Args:
             mesh_x: A TriangleMesh object or a dictionary containing mesh data for shape X.
             mesh_y: A TriangleMesh object or a dictionary containing mesh data for shape Y.
             feat_x (torch.Tensor): Feature vector of shape x. [B, Vx, C].
             feat_y (torch.Tensor): Feature vector of shape y. [B, Vy, C].
-
         Returns:
             C (torch.Tensor): Functional map from shape x to shape y. [B, K, K].
         """
@@ -57,7 +53,6 @@ class ForwardFunctionalMap(nn.Module):
         else:
             raise TypeError("mesh_x must be either a TriangleMesh or a dictionary containing 'vertices', 'faces', and 'basis'.")
 
-        # Handle mesh_y (TriangleMesh or dictionary)
         if isinstance(mesh_y, dict):
             k2 = mesh_y['basis'].shape[-1]
             evals_y = mesh_y['evals'].to(torch.float32)
@@ -102,6 +97,7 @@ class ForwardFunctionalMap(nn.Module):
         
         return Cxy
 
+    #TODO: Uniform these functions
     def _compute_mask(self, evals1, evals2, resolvant_gamma):
         """Compute the mask for the functional map in batch."""
         scaling_factor = max(torch.max(evals1), torch.max(evals2))
