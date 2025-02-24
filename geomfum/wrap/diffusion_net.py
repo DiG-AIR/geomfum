@@ -8,13 +8,15 @@ from geomfum.descriptor._base import LearnedDescriptor
 from geomfum.shape.mesh import TriangleMesh
 import torch
 
-class DiffusionNetDescriptor(LearnedDescriptor):
+class DiffusionNetDescriptor(torch.nn.Module,LearnedDescriptor):
     """Descriptor representing the output of DiffusionNet."""
     
     def __init__(self, in_channels=3, out_channels=128, hidden_channels=128, n_block=4, last_activation=None, 
                  mlp_hidden_channels=None, output_at='vertices', dropout=True, with_gradient_features=True, 
                  with_gradient_rotations=True, diffusion_method='spectral', k_eig=128, cache_dir=None, 
                  input_type='xyz', device=torch.device('cpu')):
+        super(DiffusionNetDescriptor, self).__init__()
+        
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.hidden_channels = hidden_channels
@@ -41,19 +43,45 @@ class DiffusionNetDescriptor(LearnedDescriptor):
         self.n_features = self.out_channels
         self.device = device
         
+    #this is both a nn.Module anda Learned Descriptor so it needs a forward and a __call__ method
+    def forward(self, mesh):
+        """Forward pass through the DiffusionNet model, supports both TriangleMesh and dictionaries."""
+        
+        if isinstance(mesh, dict):
+            # If input is a dictionary containing tensors
+            v = mesh['vertices'].to(torch.float32)
+            f = mesh['faces'].to(torch.int32)
+        elif isinstance(mesh, TriangleMesh):
+            # If input is a TriangleMesh object, extract vertices and faces
+            v = mesh.vertices.to(torch.float32)
+            f = mesh.faces.to(torch.int32)
+        else:
+            raise TypeError("Input must be either a TriangleMesh or a dictionary containing 'vertices' and 'faces'")
+
+        if v.dim() == 2 :
+            v = v.unsqueeze(0)
+            f = f.unsqueeze(0)
+
+        self.features = self.model(v, f)
+        return self.features
+
     def __call__(self, mesh):
         """Forward pass through the DiffusionNet model, supports both TriangleMesh and dictionaries."""
         
         if isinstance(mesh, dict):
             # If input is a dictionary containing tensors
-            v = mesh['vertices'].to(torch.float32)  # Add batch dimension
-            f = mesh['faces'].to(torch.int32)     # Add batch dimension
+            v = mesh['vertices'].to(torch.float32)
+            f = mesh['faces'].to(torch.int32)
         elif isinstance(mesh, TriangleMesh):
             # If input is a TriangleMesh object, extract vertices and faces
-            v = mesh.vertices[None].to(torch.float32)
-            f = mesh.faces[None].to(torch.int32)
+            v = mesh.vertices.to(torch.float32)
+            f = mesh.faces.to(torch.int32)
         else:
             raise TypeError("Input must be either a TriangleMesh or a dictionary containing 'vertices' and 'faces'")
+
+        if v.dim() == 2 :
+            v = v.unsqueeze(0)
+            f = f.unsqueeze(0)
 
         self.features = self.model(v, f)
         return self.features

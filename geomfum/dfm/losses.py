@@ -29,13 +29,12 @@ class LossManager:
             name: (LossRegistry.get(name), weight) for name, weight in loss_configs.items()
         }
 
-    def compute_loss(self, **kwargs):
+    def compute_loss(self, outputs):
         total_loss = 0
         loss_dict = {}
         
-
         for loss_name, (loss_fn, weight) in self.losses.items():
-            required_inputs = {key: kwargs[key] for key in loss_fn.required_inputs}
+            required_inputs = {key: outputs[key] for key in loss_fn.required_inputs}
             loss_value = loss_fn(**required_inputs) * weight
             loss_dict[loss_name] = loss_value.item()
             total_loss += loss_value
@@ -106,10 +105,10 @@ class LaplacianCommutativityLoss(nn.Module):
         super().__init__()
         self.weight = weight
 
-    required_inputs = ["Cxy", "evals_x", "evals_y"]
-    def forward(self, Cxy, evals_x, evals_y):
+    required_inputs = ["Cxy", "source", "target"]
+    def forward(self, Cxy, source,target):
         metric = SquaredFrobeniusLoss()
-        return self.weight * metric(torch.einsum('abc,ac->abc', Cxy, evals_x), torch.einsum('ab,abc->abc', evals_y, Cxy))
+        return self.weight * metric(torch.einsum('abc,ac->abc', Cxy, source['evals']), torch.einsum('ab,abc->abc', target['evals'], Cxy))
 
 
 @LossRegistry.register("Fmap_Supervision")
@@ -129,3 +128,5 @@ class Fmap_Supervision(nn.Module):
     def forward(self, Cxy, Cxy_sup):
         metric = SquaredFrobeniusLoss()
         return self.weight * metric(Cxy,Cxy_sup)
+
+

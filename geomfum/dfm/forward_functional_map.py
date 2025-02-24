@@ -16,8 +16,9 @@ import torch.functional as F
 import abc
 from ..shape.mesh import TriangleMesh
 
+
 class ForwardFunctionalMap(nn.Module):
-    def __init__(self, lmbda=0, resolvant_gamma=1):
+    def __init__(self, lmbda=0, resolvent_gamma=1):
         super(ForwardFunctionalMap, self).__init__()
         """Class for the forward pass of the functional map.
         
@@ -26,7 +27,7 @@ class ForwardFunctionalMap(nn.Module):
             resolvant_gamma (float): resolvant of the regularized functional map.
         """
         self.lmbda = lmbda
-        self.resolvant_gamma = resolvant_gamma
+        self.resolvent_gamma = resolvent_gamma
 
     def forward(self, mesh_x, mesh_y, feat_x, feat_y):
         """
@@ -65,16 +66,21 @@ class ForwardFunctionalMap(nn.Module):
             raise TypeError("mesh_y must be either a TriangleMesh or a dictionary containing 'vertices', 'faces', and 'basis'.")
 
         # Prepare feature tensors (ensure they're in the right format)
-        if feat_x.dim() == 2:
+        if evals_x.dim() == 1: evals_x = evals_x.unsqueeze(0)
+        if evals_y.dim() == 1:  evals_y = evals_y.unsqueeze(0)
+        if evecs_trans_x.dim() == 2:  evecs_trans_x = evecs_trans_x.unsqueeze(0)
+        if evecs_trans_y.dim() == 2:  evecs_trans_y = evecs_trans_y.unsqueeze(0)
+
+        if isinstance(feat_x,torch.Tensor):
+            if feat_x.dim() == 2: feat_x = feat_x.unsqueeze(0).to(device)
+            if feat_y.dim() == 2: feat_y = feat_y.unsqueeze(0).to(device)
+        else:
             feat_x = torch.tensor(feat_x.T).unsqueeze(0).to(device)
             feat_y = torch.tensor(feat_y.T).unsqueeze(0).to(device)
-        else:
-            feat_x = feat_x.to(torch.float32)
-            feat_y = feat_y.to(torch.float32)
 
         # Compute the functional map (C)
         if self.lmbda > 0:
-            MASK = self.get_mask(evals_x, evals_y, self.resolvant_gamma)  # [B, K, K]
+            MASK = self.get_mask(evals_x, evals_y, self.resolvent_gamma)  # [B, K, K]
         
         A_x = torch.bmm(evecs_trans_x, feat_x)  # [B, K, C]
         A_y = torch.bmm(evecs_trans_y, feat_y)  # [B, K, C]

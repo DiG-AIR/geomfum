@@ -168,8 +168,8 @@ class LaplaceEigenBasis(EigenBasis):
 
     def to_torch(self,device):
         if not isinstance(self.vecs, torch.Tensor):
-            self.full_vals=torch.tensor(self.full_vals).to(device)
-            self.full_vecs=torch.tensor(self.full_vecs).to(device)
+            self.full_vals=torch.tensor(self.full_vals).to(torch.float32).to(device)
+            self.full_vecs=torch.tensor(self.full_vecs).to(torch.float32).to(device)
         
     def to_numpy(self):
         if isinstance(self.vecs, torch.Tensor):
