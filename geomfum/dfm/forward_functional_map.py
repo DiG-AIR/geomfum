@@ -3,31 +3,62 @@ This file contains the implementation of the deep functional map network approac
 In 'functional_map.py' we defined the energies and the optimization problem for the functional map.
 At the same time here we define the loss functions to optimize a functional map.
 
-
 In Deep Functional Maps, the fiunctional map is computed by the forward pass computed on given descriptors.
 The algorithm that performs this pass is typically called FunctionalMapNet
 """
-
-# TODO: Add bidirectionality parameter
 
 import torch
 import torch.nn as nn
 import torch.functional as F
 import abc
-from ..shape.mesh import TriangleMesh
-
+from geomfum.shape.mesh import TriangleMesh
 
 class ForwardFunctionalMap(nn.Module):
-    def __init__(self, lmbda=0, resolvent_gamma=1):
+    def __init__(self, lmbda=0, resolvent_gamma=1, bijective=True):
         super(ForwardFunctionalMap, self).__init__()
         """Class for the forward pass of the functional map.
-        
         Args:
             lmbda (float): weight of the mask
             resolvant_gamma (float): resolvant of the regularized functional map.
+            bijective (bool): whether we compute the map inboth the directions.
         """
         self.lmbda = lmbda
         self.resolvent_gamma = resolvent_gamma
+        self.bijective = bijective
+
+    def compute_functional_map(self, feat_x, feat_y, evals_x, evals_y, evecs_trans_x, evecs_trans_y):
+        """
+        Compute the functional map between two shapes.
+        Args:
+            feat_x (torch.Tensor): Feature vector of shape x. [B, Vx, C].
+            feat_y (torch.Tensor): Feature vector of shape y. [B, Vy, C].
+            evals_x (torch.Tensor): Eigenvalues of shape x. [B, K].
+            evals_y (torch.Tensor): Eigenvalues of shape y. [B, K].
+        """
+        # Compute the functional map (C)
+        if self.lmbda > 0:
+            MASK = self.get_mask(evals_x, evals_y, self.resolvent_gamma)  # [B, K, K]
+        
+        A_x = torch.bmm(evecs_trans_x, feat_x)  # [B, K, C]
+        A_y = torch.bmm(evecs_trans_y, feat_y)  # [B, K, C]
+
+        A_x_t = A_x.transpose(1, 2)
+
+        AA_xx = torch.bmm(A_x, A_x_t)  # [B, K, K]
+        AA_yx = torch.bmm(A_y, A_x_t)  # [B, K, K]
+
+        C_i = []
+        for i in range(evals_x.shape[1]):
+            if self.lmbda == 0:
+                C = torch.bmm(torch.inverse(AA_xx), AA_yx[:, [i], :].transpose(1, 2))
+            else:
+                MASK_i = torch.cat([torch.diag(MASK[bs, i, :].flatten()).unsqueeze(0) for bs in range(evals_x.shape[0])], dim=0)
+                C = torch.bmm(torch.inverse(AA_xx + self.lmbda * MASK_i), AA_yx[:, [i], :].transpose(1, 2))
+            C_i.append(C.transpose(1, 2))   
+        
+        Cxy = torch.cat(C_i, dim=1)
+        return Cxy
+        
 
     def forward(self, mesh_x, mesh_y, feat_x, feat_y):
         """
@@ -38,7 +69,9 @@ class ForwardFunctionalMap(nn.Module):
             feat_x (torch.Tensor): Feature vector of shape x. [B, Vx, C].
             feat_y (torch.Tensor): Feature vector of shape y. [B, Vy, C].
         Returns:
-            C (torch.Tensor): Functional map from shape x to shape y. [B, K, K].
+            Cxy (torch.Tensor): Functional map from shape x to shape y. [B, K, K].
+            Cyx (torch.Tensor): Functional map from shape x to shape y. [B, K, K].
+
         """
         device = feat_x.device
         
@@ -77,31 +110,14 @@ class ForwardFunctionalMap(nn.Module):
         else:
             feat_x = torch.tensor(feat_x.T).unsqueeze(0).to(device)
             feat_y = torch.tensor(feat_y.T).unsqueeze(0).to(device)
-
-        # Compute the functional map (C)
-        if self.lmbda > 0:
-            MASK = self.get_mask(evals_x, evals_y, self.resolvent_gamma)  # [B, K, K]
         
-        A_x = torch.bmm(evecs_trans_x, feat_x)  # [B, K, C]
-        A_y = torch.bmm(evecs_trans_y, feat_y)  # [B, K, C]
-
-        A_x_t = A_x.transpose(1, 2)
-            
-        AA_xx = torch.bmm(A_x, A_x_t)  # [B, K, K]
-        AA_yx = torch.bmm(A_y, A_x_t)  # [B, K, K]
-
-        C_i = []
-        for i in range(evals_x.shape[1]):
-            if self.lmbda == 0:
-                C = torch.bmm(torch.inverse(AA_xx), AA_yx[:, [i], :].transpose(1, 2))
-            else:
-                MASK_i = torch.cat([torch.diag(MASK[bs, i, :].flatten()).unsqueeze(0) for bs in range(evals_x.shape[0])], dim=0)
-                C = torch.bmm(torch.inverse(AA_xx + self.lmbda * MASK_i), AA_yx[:, [i], :].transpose(1, 2))
-            C_i.append(C.transpose(1, 2))   
+        Cxy = self.compute_functional_map(feat_x, feat_y, evals_x, evals_y, evecs_trans_x, evecs_trans_y)
         
-        Cxy = torch.cat(C_i, dim=1)
-        
-        return Cxy
+        if self.bijective:
+            Cyx = self.compute_functional_map(feat_y, feat_x, evals_y, evals_x, evecs_trans_y, evecs_trans_x)
+        else:
+            Cyx = None
+        return Cxy, Cyx
 
     #TODO: Uniform these functions
     def _compute_mask(self, evals1, evals2, resolvant_gamma):
