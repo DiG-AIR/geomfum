@@ -9,7 +9,7 @@ def _prefix_with_ellipsis(string):
 
 def normalize(array, axis=-1):
     # TODO: handle norm zero?
-    return array / np.linalg.norm(array, axis=1, keepdims=True)
+    return array / np.linalg.norm(array, axis=axis, keepdims=True)
 
 
 def columnwise_scaling(vec, mat):

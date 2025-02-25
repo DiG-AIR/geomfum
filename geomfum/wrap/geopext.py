@@ -4,7 +4,7 @@ import geopext
 import numpy as np
 import scipy
 
-from geomfum.laplacian._base import BaseLaplacianFinder
+from geomfum.laplacian import BaseLaplacianFinder
 
 
 class GeopextMeshLaplacianFinder(BaseLaplacianFinder):

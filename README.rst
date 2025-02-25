@@ -9,8 +9,7 @@ Installation
 
 ::
 
-    pip install git+https://github.com/luisfpereira/geomfum
-
+    pip install geomfum@git+https://github.com/luisfpereira/geomfum.git@main
 
 Or the classic pipeline ``clone + pip install .``.
 
