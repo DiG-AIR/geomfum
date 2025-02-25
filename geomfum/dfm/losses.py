@@ -1,3 +1,8 @@
+"""
+This file contains the implementation of useful loss functions for deep functional map.
+They are organized with a loss managaer and registered by a Lossregistry.
+"""
+
 import torch
 import torch.nn as nn
 
@@ -58,7 +63,7 @@ class SquaredFrobeniusLoss(nn.Module):
 @LossRegistry.register("Orthonormality")
 class OrthonormalityLoss(nn.Module):
     """
-    Computes the Orthonormality error of a functional map
+    Computes the Orthonormality error of a functional map  \| C^T C - I \|
     Inputs: 
     - fmap: Functional map
     """    
@@ -76,7 +81,7 @@ class OrthonormalityLoss(nn.Module):
 @LossRegistry.register("Bijectivity")
 class BijectivityLoss(nn.Module):
     """
-    Computes the Bijectivity error of two functional maps
+    Computes the Bijectivity error of two functional maps \| Cxy Cyx - I  \|
     Inputs:
     - fmap12: Functional map from shape 1 to shape 2
     - fmap21: Functional map from shape 2 to shape 1

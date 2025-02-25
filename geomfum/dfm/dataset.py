@@ -1,3 +1,9 @@
+"""
+This module contains the dataset classes usefull for deep functional maps.
+We create a dataset model in which we store the shapes and their features.
+We also create a dataset model in which we store the pairs of shapes and their features.
+"""
+
 import torch
 import os
 from torch.utils.data import Dataset
@@ -6,38 +12,49 @@ import random
 from geomfum.shape.mesh import TriangleMesh
 
 class ShapeDataset(Dataset):
-    def __init__(self, shape_dir, device=None):
+    def __init__(self, shape_dir, spectral=True, k=30,device=None):
+        """
+        Dataset of single shapes with their features.
+        Args:
+            shape_dir (str): Path to the directory containing the shapes.
+            spectral (bool): Whether to compute the spectral features. (default True)
+            k (int): Number of eigenvectors to use for the spectral features. (default 30)
+            device (torch.device): Device to move the data to.
+        """
+
         self.shape_dir = shape_dir
         self.shape_files = sorted([f for f in os.listdir(shape_dir) if f.endswith('.off')])    # off but we can accept also otherkind of files
         self.device = device if device is not None else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+        self.spectral = spectral
+        self.k = k
         # Preload meshes (or their important features) into memory
         self.meshes = {}
         for filename in self.shape_files:
             mesh = TriangleMesh.from_file(os.path.join(self.shape_dir, filename))
-            mesh.laplacian.find_spectrum(spectrum_size=40, set_as_basis=True)
-            mesh.basis.use_k = 30
+            if spectral:
+                mesh.laplacian.find_spectrum(spectrum_size=40, set_as_basis=True)
+                mesh.basis.use_k = 30
             self.meshes[filename] = mesh
     def __getitem__(self, idx):
-        # Retrieve the pair of filenames
+
         filename = self.shape_files[idx]
-        
-        # Retrieve preloaded meshes
         mesh = self.meshes[filename]
-        mesh.use_k=30
-        # Convert meshes to tensors and move to device (for training)
-        mesh.to_torch(self.device)
-    
-        mesh.basis.to_torch(self.device)
-        # Create a dictionary with all the relevant data
         
+        mesh.to_torch(self.device)
+        # the datas are stored in dictionaries
         data = {
             'vertices': mesh.vertices,
             'faces': mesh.faces,
-            'evals': mesh.basis.vals,
-            'basis': mesh.basis.vecs,
-            'pinv': mesh.basis.pinv
         }
+        if self.spectral:
+            mesh.use_k=self.k
+            mesh.basis.to_torch(self.device)
+            data.update({
+                'evals': mesh.basis.vals,
+                'basis': mesh.basis.vecs,
+                'pinv': mesh.basis.pinv
+            })
+        
         return data
 
     def __len__(self):
@@ -45,10 +62,20 @@ class ShapeDataset(Dataset):
 
     
 class PairsDataset(Dataset):
-    def __init__(self, shape_dir, pair_mode='all', device=None):
+    def __init__(self, shape_dir,pair_mode='all', spectral = True, k = 30, device=None):
+        """
+        Dataset of pairs of shapes.
+        Args:
+            shape_dir (str): Path to the directory containing the shapes.
+            pair_mode (str): Strategy to generate pairs. Options: 'all', 'random', 'category_based'. (default 'all')
+            spectral (bool): Whether to compute the spectral features. (default True)
+            k (int): Number of eigenvectors to use for the spectral features. (default 30)
+            device (torch.device): Device to move the data to.
+        """
+
         self.shape_dir = shape_dir
         # Preload meshes
-        self.shape_data= ShapeDataset(shape_dir, device=device)
+        self.shape_data= ShapeDataset(shape_dir, spectral,k, device=device)
         self.pair_mode = pair_mode
         self.device = device if device is not None else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

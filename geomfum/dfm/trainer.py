@@ -1,3 +1,10 @@
+"""
+This file contains the trainer for the Deep functional map model.
+This code is based on the assumption that this file should not be modified bu user or developer to test different models and so it is just a way to instantiate
+models and losses defined in their original code.
+"""
+
+
 import torch
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm

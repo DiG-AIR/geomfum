@@ -3,6 +3,7 @@ This file contains an implementation to obtaina  permutation betwee two features
 
 For the moment is just a wrappe rof densemesh form robin magnet  
 https://arxiv.org/html/2404.00330v1
+Memory-Scalable and Simplified Functional Map Learning, Robin Magnet, Maks Ovsjanikov 2024
 """
 
 from densemaps.torch import maps
