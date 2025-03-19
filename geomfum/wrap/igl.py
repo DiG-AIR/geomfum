@@ -2,7 +2,7 @@
 
 import igl
 
-from geomfum.laplacian._base import BaseLaplacianFinder
+from geomfum.laplacian import BaseLaplacianFinder
 
 
 class IglMeshLaplacianFinder(BaseLaplacianFinder):

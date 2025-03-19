@@ -1,6 +1,32 @@
+"""Laplacian-related algorithms."""
+
+import abc
+
+import geomfum.wrap as _wrap  # noqa (for register)
 from geomfum._registry import LaplacianFinderRegistry, MeshWhichRegistryMixins
 from geomfum.basis import LaplaceEigenBasis
 from geomfum.numerics.eig import ScipyEigsh
+
+
+class BaseLaplacianFinder(abc.ABC):
+    """Algorithm to find the Laplacian."""
+
+    @abc.abstractmethod
+    def __call__(self, shape):
+        """Apply algorithm.
+
+        Parameters
+        ----------
+        shape : Shape
+            Shape.
+
+        Returns
+        -------
+        stiffness_matrix : array-like, shape=[n_vertices, n_vertices]
+            Stiffness matrix.
+        mass_matrix : array-like, shape=[n_vertices, n_vertices]
+            Mass matrix.
+        """
 
 
 class LaplacianFinder(MeshWhichRegistryMixins):

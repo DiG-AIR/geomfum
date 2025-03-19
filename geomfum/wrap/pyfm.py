@@ -6,7 +6,7 @@ import pyFM.signatures
 import scipy
 
 from geomfum.descriptor._base import SpectralDescriptor
-from geomfum.laplacian._base import BaseLaplacianFinder
+from geomfum.laplacian import BaseLaplacianFinder
 from geomfum.operator import FunctionalOperator, VectorFieldOperator
 
 
