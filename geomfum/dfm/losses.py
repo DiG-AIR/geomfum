@@ -118,7 +118,7 @@ class LaplacianCommutativityLoss(nn.Module):
 
 @LossRegistry.register("Fmap_Supervision")
 class Fmap_Supervision(nn.Module):
-    """
+    """WW
     Computes the Laplacian Commutativity error of a functional map
     Inputs:
     - fmap: Functional map
@@ -134,4 +134,21 @@ class Fmap_Supervision(nn.Module):
         metric = SquaredFrobeniusLoss()
         return self.weight * metric(Cxy,Cxy_sup)
 
+
+@LossRegistry.register("Geodesic_Eval")
+class Geodesic_Evaluation(nn.Module):
+    """
+    Computes the approximation error of permutation with respect to ground truth
+    Inputs:
+    - P12: Permutation
+    - source: Source Shape
+    - target: Target Shape
+    """
+    def __init__(self, weight=1):
+        super().__init__()
+        self.weight = weight
+
+    required_inputs = ["Pxy", "source", "target"]
+    def forward(self, Pxy, source, target):
+        return self.weight * torch.mean(target['distances'][Pxy@source['corr'],target['corr']])
 

@@ -10,8 +10,10 @@ from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 import logging
 from geomfum.dfm.losses import LossManager
-from geomfum.dfm.dataset import PairsDataset
+from geomfum.dfm.dataset import ShapeDataset, PairsDataset
 from geomfum.dfm.model import get_model_class
+
+from geomfum.convert import P2pFromFmConverter
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -26,22 +28,28 @@ class DeepFunctionalMapTrainer:
         self.shape_dir = config["shape_dir"]
 
         # Dataset & DataLoader
-        self.train_loader, self.test_loader = self._get_dataloaders()
+        self.train_loader, self.val_loader = self._get_dataloaders()
 
         # Model, Loss, Optimizer
         self._initialize_training_components()
 
     def _get_dataloaders(self):
         logging.info("Loading dataset...")
-        dataset = PairsDataset(self.shape_dir, pair_mode=self.config.get("pair_mode", "all"), device=self.device)
-        train_size = int(0.8 * len(dataset))
-        test_size = len(dataset) - train_size
-        train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
+        dataset = ShapeDataset(self.shape_dir, spectral=True, device=self.device)  # we load all the shapes
+        train_size = int(0.8 * len(dataset))        # we split the shapes into train and validation     
+        val_size = len(dataset) - train_size       
 
+        train_shapes, validation_shapes = random_split(dataset, [train_size, val_size])
+        #we create a dataset of pairs from the training shapes
+        train_dataset = PairsDataset(train_shapes, pair_mode=self.config.get("pair_mode", "all"),n_pairs=self.config.get("n_pairs", 100), device=self.device)
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
-        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
+        #we create a dataset of pairs from the test shapes
+        validation_dataset = PairsDataset(validation_shapes, pair_mode=self.config.get("pair_mode", "all"),n_pairs=self.config.get("n_pairs", 100), device=self.device)
+        val_loader = DataLoader(validation_dataset, batch_size=self.batch_size, shuffle=True)
+
         logging.info("Dataset loaded successfully.")
-        return train_loader, test_loader
+
+        return train_loader, val_loader
 
     def _initialize_training_components(self):
         logging.info("Initializing model, loss manager, and optimizer...")
@@ -54,12 +62,14 @@ class DeepFunctionalMapTrainer:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
         logging.info("Model, loss manager, and optimizer initialized successfully.")
 
+
     def train(self):
-        self.model.train()
         for epoch in range(self.epochs):
+            # Training phase
+            self.model.train()
             running_loss = 0.0
-            logging.info(f"Epoch [{epoch+1}/{self.epochs}]")
-            with tqdm(total=len(self.train_loader), desc=f"Epoch {epoch+1}/{self.epochs}", unit="batch") as pbar:
+            logging.info(f"Epoch [{epoch+1}/{self.epochs}] - Training")
+            with tqdm(total=len(self.train_loader), desc=f"Epoch {epoch+1}/{self.epochs} (Train)", unit="batch") as pbar:
                 for batch_idx, pair in enumerate(self.train_loader):
                     self.optimizer.zero_grad()
                     outputs = self.model(pair['source'], pair['target'])
@@ -70,22 +80,33 @@ class DeepFunctionalMapTrainer:
                     running_loss += loss.item()
                     pbar.set_postfix({"Loss": f"{loss.item():.4f}"})
                     pbar.update(1)
-            logging.info(f'Epoch [{epoch+1}/{self.epochs}], Average Loss: {running_loss/len(self.train_loader):.4f}')
+            avg_train_loss = running_loss / len(self.train_loader)
+            logging.info(f"Epoch [{epoch+1}/{self.epochs}] - Average Training Loss: {avg_train_loss:.4f}")
 
-    def test(self):
+            # Validation phase
+            avg_val_loss = self.validate()
+            logging.info(f"Epoch [{epoch+1}/{self.epochs}] - Average Validation Loss: {avg_val_loss:.4f}")
+
+    def validate(self):
         self.model.eval()
-        test_loss = 0.0
-        logging.info("Testing...")
+        val_loss = 0.0
+        logging.info("Validating...")
         with torch.no_grad():
-            with tqdm(total=len(self.test_loader), desc="Testing", unit="batch") as pbar:
-                for batch_idx, pair in enumerate(self.test_loader):
+            with tqdm(total=len(self.val_loader), desc="Validation", unit="batch") as pbar:
+                for batch_idx, pair in enumerate(self.val_loader):
                     outputs = self.model(pair['source'], pair['target'])
                     loss, loss_dict = self.loss_manager.compute_loss(outputs)
-                    test_loss += loss.item()
+                    val_loss += loss.item()
                     pbar.set_postfix({"Loss": f"{loss.item():.4f}"})
                     pbar.update(1)
-        logging.info(f'Average Test Loss: {test_loss/len(self.test_loader):.4f}')
-
+        avg_val_loss = val_loss / len(self.val_loader)
+        logging.info(f"Average Validation Loss: {avg_val_loss:.4f}")
+        return avg_val_loss  
+    
     def save_model(self, path):
         torch.save(self.model.state_dict(), path)
         logging.info(f"Model saved to {path}")
+    
+    def load_model(self, path):
+        self.model.load_state_dict(torch.load(path))
+        logging.info(f"Model loaded from {path}")
