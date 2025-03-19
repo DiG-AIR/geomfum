@@ -10,9 +10,20 @@ from densemaps.torch import maps
 import torch.nn as nn
 
 class PermutationModule(nn.Module):
+    def __init__(self, tau=0.07):
+        super(PermutationModule, self).__init__()   
+        self.tau=tau
+    def forward(self, feat1, feat2):
+        P21 = nn.functional.softmax(feat1@feat2.transpose(-1,-2)/self.tau, dim=-1)
+
+        return P21 
+
+
+
+class DensePermutation(nn.Module):
     
     def __init__(self, blur=0.1, permutation='dense'):
-        super(PermutationModule, self).__init__()   
+        super(DensePermutation, self).__init__()   
         self.param=permutation
         self.blur=blur
     def forward(self, feat1, feat2):
