@@ -93,3 +93,4 @@ class DiffusionNetDescriptor(torch.nn.Module,LearnedDescriptor):
     def load(self, pre_model):
         """Load model parameters from the provided pre-trained model."""
         self.model.load_state_dict(pre_model)
+    

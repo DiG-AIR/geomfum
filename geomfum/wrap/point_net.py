@@ -10,15 +10,34 @@ from geomfum.shape.mesh import TriangleMesh
 import torch
 
 
-class PointNetDescriptor(LearnedDescriptor):
+class PointNetDescriptor(torch.nn.Module,LearnedDescriptor):
     """Descriptor representing the output of PointNet."""
 
-    def __init__(self, k=128,device=torch.device('cpu'), feature_transform=False):
+    def __init__(self, k=128,device=torch.device('cuda'), feature_transform=False):
         super(PointNetDescriptor, self).__init__()
         self.model = PointNet(k=k, feature_transform=feature_transform).to(device)
         self.n_features = k
         self.device = device
 
+
+    def forward(self, mesh):
+        """Process the point cloud data using PointNet."""
+        if isinstance(mesh, dict):
+            # If input is a dictionary containing tensors
+            v = mesh['vertices'].to(torch.float32) 
+        elif isinstance(mesh, TriangleMesh):
+        # If input is a TriangleMesh object, extract vertices and faces
+            v = mesh.vertices[None].to(torch.float32) #Add batch dimension
+        else:
+            raise TypeError("Input must be either a TriangleMesh or a dictionary containing 'vertices' and 'faces'")
+
+        point_cloud = v.to(torch.float32)
+        #ADDITIONAL CHECK ON THE DIMENSION
+        if point_cloud.ndimension() == 2:
+            point_cloud = point_cloud.unsqueeze(0)
+        self.features = self.model(point_cloud.transpose(2,1))
+
+        return self.features
     def __call__(self, mesh):
         """Process the point cloud data using PointNet."""
         if isinstance(mesh, dict):
@@ -30,18 +49,18 @@ class PointNetDescriptor(LearnedDescriptor):
         else:
             raise TypeError("Input must be either a TriangleMesh or a dictionary containing 'vertices' and 'faces'")
 
-        with torch.no_grad():
-            point_cloud = v.to(torch.float32)
-            #ADDITIONAL CHECK ON THE DIMENSION
-            if point_cloud.ndimension() == 2:
-                point_cloud = point_cloud.unsqueeze(0)
-            self.features = self.model(point_cloud.transpose(2,1))
+        point_cloud = v.to(torch.float32)
+        #ADDITIONAL CHECK ON THE DIMENSION
+        if point_cloud.ndimension() == 2:
+            point_cloud = point_cloud.unsqueeze(0)
+        self.features = self.model(point_cloud.transpose(2,1))
         # for the moment the function outputs a numpy array of dimension DxN
         return self.features
 
+
     def load_from_path(self, path):
         #load model parameters from the provided path
-        self.model.load_state_dict(torch.load(path,map_location=torch.device('cpu')))
+        self.model.load_state_dict(torch.load(path,map_location=self.device))
     
     def load(self, premodel):
         #load model parameters from the provided path

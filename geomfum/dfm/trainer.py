@@ -110,3 +110,7 @@ class DeepFunctionalMapTrainer:
     def load_model(self, path):
         self.model.load_state_dict(torch.load(path))
         logging.info(f"Model loaded from {path}")
+    
+    def save_desc(self, path):
+        self.model.desc_model.save(path)
+        logging.info(f"Model description saved to {path}")
