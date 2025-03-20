@@ -215,6 +215,7 @@ class MeshWhichRegistryMixins:
         return cls._Registry.get(mesh, which)(*args, **kwargs)
 
 
+
 class LaplacianFinderRegistry(MeshWhichRegistry):
     """Laplacian finder registry."""
 
@@ -244,6 +245,16 @@ class FaceOrientationOperatorRegistry(WhichRegistry):
 class HierarchicalMeshRegistry(WhichRegistry):
     MAP = {}
 
+class LearnedDescriptorsRegistry(WhichRegistry):
+    MAP = {}
+
+class LossRegistry(WhichRegistry):
+    MAP = {}
+
+class ModelRegistry(WhichRegistry):
+    MAP = {}
+
+
 
 def _create_register_funcs(module):
     """Create ``register`` functions for each class registry in this module.
@@ -272,3 +283,4 @@ def _create_register_funcs(module):
         setattr(module, new_name, method.register)
 
 
+_create_register_funcs(sys.modules[__name__])

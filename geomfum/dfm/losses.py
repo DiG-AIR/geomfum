@@ -5,23 +5,7 @@ They are organized with a loss managaer and registered by a Lossregistry.
 
 import torch
 import torch.nn as nn
-
-class LossRegistry:
-    _losses = {}
-
-    @classmethod
-    def register(cls, name):
-        def decorator(loss_class):
-            cls._losses[name] = loss_class
-            return loss_class
-        return decorator
-
-    @classmethod
-    def get(cls, name, *args, **kwargs):
-        if name not in cls._losses:
-            raise ValueError(f"Loss {name} not found. Available: {list(cls._losses.keys())}")
-        return cls._losses[name](*args, **kwargs)
-
+from geomfum._registry import LossRegistry
 
 class LossManager:
     def __init__(self, loss_configs):
@@ -49,7 +33,6 @@ class LossManager:
 
 ######################LOSS IMPLEMENTATIONS ############################
 
-@LossRegistry.register("Frobenius")
 class SquaredFrobeniusLoss(nn.Module):
     """
     Compute the distance induced by the frobenius norm between two vectors/matrices
@@ -60,7 +43,6 @@ class SquaredFrobeniusLoss(nn.Module):
     def forward(self, a, b):
         return torch.mean(torch.sum(torch.abs(a - b) ** 2, dim=(-2, -1)))
 
-@LossRegistry.register("Orthonormality")
 class OrthonormalityLoss(nn.Module):
     """
     Computes the Orthonormality error of a functional map  \| C^T C - I \|
@@ -78,7 +60,6 @@ class OrthonormalityLoss(nn.Module):
         return self.weight * metric(torch.bmm(Cxy.transpose(1, 2), Cxy), eye)
 
 
-@LossRegistry.register("Bijectivity")
 class BijectivityLoss(nn.Module):
     """
     Computes the Bijectivity error of two functional maps \| Cxy Cyx - I  \|
@@ -97,7 +78,6 @@ class BijectivityLoss(nn.Module):
         return self.weight * metric(torch.bmm(Cxy, Cyx), eye) + metric(torch.bmm(Cyx, Cxy), eye)
 
 
-@LossRegistry.register("Laplacian_Commutativity")
 class LaplacianCommutativityLoss(nn.Module):
     """
     Computes the Laplacian Commutativity error of a functional map
@@ -116,7 +96,6 @@ class LaplacianCommutativityLoss(nn.Module):
         return self.weight * metric(torch.einsum('abc,ac->abc', Cxy, source['evals']), torch.einsum('ab,abc->abc', target['evals'], Cxy))
 
 
-@LossRegistry.register("Fmap_Supervision")
 class Fmap_Supervision(nn.Module):
     """WW
     Computes the Laplacian Commutativity error of a functional map
@@ -135,7 +114,6 @@ class Fmap_Supervision(nn.Module):
         return self.weight * metric(Cxy,Cxy_sup)
 
 
-@LossRegistry.register("Geodesic_Eval")
 class Geodesic_Evaluation(nn.Module):
     """
     Computes the approximation error of permutation with respect to ground truth

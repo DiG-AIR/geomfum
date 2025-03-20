@@ -9,23 +9,10 @@ from geomfum.dfm.forward_functional_map import ForwardFunctionalMap
 from geomfum.dfm.permutation import PermutationModule
 
 
-
-MODEL_REGISTRY = {}
-
-def register_model(name):
-    def decorator(cls):
-        MODEL_REGISTRY[name] = cls
-        return cls
-    return decorator
-
-def get_model_class(name):
-    return MODEL_REGISTRY.get(name)
-
 class BaseModel(torch.nn.Module):
     def __init__(self):
         super(BaseModel, self).__init__()
     
-@register_model('VanillaFMNet')
 class FMNet(torch.nn.Module):
     def __init__(self, config,device='cuda'):
         """
@@ -46,7 +33,6 @@ class FMNet(torch.nn.Module):
 
 
     
-@register_model('ProperMapNet')
 class ProperMapNet(BaseModel):
     def __init__(self, config,device='cuda'):
         """
@@ -71,7 +57,6 @@ class ProperMapNet(BaseModel):
         return {"Cxy":Cxy,"Cyx":Cyx,"Cxy_sup": C_p}
     
         
-@register_model('CaoNet')
 class CaoNet(BaseModel):
     def __init__(self, config,device='cuda'):
         """
