@@ -53,29 +53,29 @@ class OrthonormalityLoss(nn.Module):
         super().__init__()
         self.weight = weight
 
-    required_inputs = ["Cxy"]            
-    def forward(self, Cxy):
+    required_inputs = ["Cab"]            
+    def forward(self, Cab):
         metric = SquaredFrobeniusLoss()
-        eye = torch.eye(Cxy.shape[1], device=Cxy.device).unsqueeze(0).expand(Cxy.shape[0], -1, -1)
-        return self.weight * metric(torch.bmm(Cxy.transpose(1, 2), Cxy), eye)
+        eye = torch.eye(Cab.shape[1], device=Cab.device).unsqueeze(0).expand(Cab.shape[0], -1, -1)
+        return self.weight * metric(torch.bmm(Cab.transpose(1, 2), Cab), eye)
 
 
 class BijectivityLoss(nn.Module):
     """
-    Computes the Bijectivity error of two functional maps \| Cxy Cyx - I  \|
+    Computes the Bijectivity error of two functional maps \| Cab Cba - I  \|
     Inputs:
-    - fmap12: Functional map from shape 1 to shape 2
-    - fmap21: Functional map from shape 2 to shape 1
+    - Cab: Functional map from shape 1 to shape 2
+    - Cba: Functional map from shape 2 to shape 1
     """
     def __init__(self, weight=1):
         super().__init__()
         self.weight = weight
 
-    required_inputs = ["Cxy", "Cyx"]
-    def forward(self, Cxy, Cyx):
+    required_inputs = ["Cab", "Cba"]
+    def forward(self, Cab, Cba):
         metric = SquaredFrobeniusLoss()
-        eye = torch.eye(Cxy.shape[1], device=Cxy.device).unsqueeze(0).expand(Cxy.shape[0], -1, -1)
-        return self.weight * metric(torch.bmm(Cxy, Cyx), eye) + metric(torch.bmm(Cyx, Cxy), eye)
+        eye = torch.eye(Cab.shape[1], device=Cab.device).unsqueeze(0).expand(Cab.shape[0], -1, -1)
+        return self.weight * metric(torch.bmm(Cab, Cba), eye) + metric(torch.bmm(Cba, Cab), eye)
 
 
 class LaplacianCommutativityLoss(nn.Module):
@@ -83,17 +83,17 @@ class LaplacianCommutativityLoss(nn.Module):
     Computes the Laplacian Commutativity error of a functional map
     Inputs:
     - fmap: Functional map
-    - evals1: Eigenvalues of the first shape
-    - evals2: Eigenvalues of the second shape
+    - evals_a: Eigenvalues of the first shape
+    - evals_b: Eigenvalues of the second shape
     """
     def __init__(self, weight=1):
         super().__init__()
         self.weight = weight
 
-    required_inputs = ["Cxy", "source", "target"]
-    def forward(self, Cxy, source,target):
+    required_inputs = ["Cab", "source", "target"]
+    def forward(self, Cab, source,target):
         metric = SquaredFrobeniusLoss()
-        return self.weight * metric(torch.einsum('abc,ac->abc', Cxy, source['evals']), torch.einsum('ab,abc->abc', target['evals'], Cxy))
+        return self.weight * metric(torch.einsum('abc,ac->abc', Cab, source['evals']), torch.einsum('ab,abc->abc', target['evals'], Cab))
 
 
 class Fmap_Supervision(nn.Module):
@@ -101,32 +101,13 @@ class Fmap_Supervision(nn.Module):
     Computes the Laplacian Commutativity error of a functional map
     Inputs:
     - fmap: Functional map
-    - evals1: Eigenvalues of the first shape
-    - evals2: Eigenvalues of the second shape
     """
     def __init__(self, weight=1):
         super().__init__()
         self.weight = weight
 
-    required_inputs = ["Cxy", "Cxy_sup"]
-    def forward(self, Cxy, Cxy_sup):
+    required_inputs = ["Cab", "Cab_sup"]
+    def forward(self, Cab, Cab_sup):
         metric = SquaredFrobeniusLoss()
-        return self.weight * metric(Cxy,Cxy_sup)
-
-
-class Geodesic_Evaluation(nn.Module):
-    """
-    Computes the approximation error of permutation with respect to ground truth
-    Inputs:
-    - P12: Permutation
-    - source: Source Shape
-    - target: Target Shape
-    """
-    def __init__(self, weight=1):
-        super().__init__()
-        self.weight = weight
-
-    required_inputs = ["Pxy", "source", "target"]
-    def forward(self, Pxy, source, target):
-        return self.weight * torch.mean(target['distances'][Pxy@source['corr'],target['corr']])
+        return self.weight * metric(Cab,Cab_sup)
 

@@ -13,10 +13,10 @@ class PermutationModule(nn.Module):
     def __init__(self, tau=0.07):
         super(PermutationModule, self).__init__()   
         self.tau=tau
-    def forward(self, feat1, feat2):
-        P21 = nn.functional.softmax(feat1@feat2.transpose(-1,-2)/self.tau, dim=-1)
+    def forward(self, feat_a, feat_b):
+        Pba = nn.functional.softmax(feat_a@feat_b.transpose(-1,-2)/self.tau, dim=-1)
 
-        return P21 
+        return Pba
 
 
 
@@ -26,13 +26,13 @@ class DensePermutation(nn.Module):
         super(DensePermutation, self).__init__()   
         self.param=permutation
         self.blur=blur
-    def forward(self, feat1, feat2):
-        P21 = maps.KernelDistMap(feat1, feat2, blur=self.blur)  # A "dense" kernel map, not used in memory
+    def forward(self, feat_a, feat_b):
+        Pba = maps.KernelDistMap(feat_a, feat_b, blur=self.blur)  # A "dense" kernel map, not used in memory
 
         if self.param=='dense':
-            return  P21._to_dense() 
+            return  Pba._to_dense() 
         if self.param=='index':
-            return  P21.get_nn() 
+            return  Pba.get_nn() 
         else:
-            return P21 
+            return Pba
 

@@ -1,9 +1,3 @@
-"""
-This module contains the dataset classes usefull for deep functional maps.
-We create a dataset model in which we store the shapes and their features.
-We also create a dataset model in which we store the pairs of shapes and their features.
-"""
-
 import torch
 import os
 from torch.utils.data import Dataset
@@ -15,7 +9,10 @@ import numpy as np
 class ShapeDataset(Dataset):
     def __init__(self, shape_dir, spectral=True, distances=True, k=30,device=None):
         """
-        Dataset of single shapes with their features.
+        ShapeDataset
+        
+        Generate a dataset of shapes with notable features
+        
         Args:
             shape_dir (str): Path to the directory containing the shapes.
             spectral (bool): Whether to compute the spectral features. (default True)

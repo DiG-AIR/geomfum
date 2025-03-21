@@ -28,8 +28,8 @@ class FMNet(torch.nn.Module):
     def forward(self, source, target):
         desc_a = self.desc_model(source)
         desc_b = self.desc_model(target)
-        Cxy,Cyx= self.fmap(source, target, desc_a, desc_b)
-        return {"Cxy":Cxy,"Cyx":Cyx}
+        Cab,Cba= self.fmap(source, target, desc_a, desc_b)
+        return {"Cab":Cab,"Cba":Cba}
 
 
     
@@ -50,11 +50,11 @@ class ProperMapNet(BaseModel):
     def forward(self, source, target):
         desc_a = self.desc_model(source)
         desc_b = self.desc_model(target)
-        Cxy,Cyx  = self.fmap(source, target, desc_a, desc_b)
-        P12 = self.perm( source['basis'],target['basis']@Cxy)
-        C_p= torch.bmm(target['pinv'],torch.bmm(P12,source['basis']))
+        Cab,Cba  = self.fmap(source, target, desc_a, desc_b)
+        Pab = self.perm( source['basis'],target['basis']@Cab)
+        C_p= torch.bmm(target['pinv'],torch.bmm(Pab,source['basis']))
 
-        return {"Cxy":Cxy,"Cyx":Cyx,"Cxy_sup": C_p}
+        return {"Cab":Cab,"Cba":Cba,"Cab_sup": C_p}
     
         
 class CaoNet(BaseModel):
@@ -73,11 +73,11 @@ class CaoNet(BaseModel):
     def forward(self, source, target):
         desc_a = self.desc_model(source)
         desc_b = self.desc_model(target)
-        Cxy,Cyx  = self.fmap(source, target, desc_a, desc_b)
-        Pyx = self.perm(desc_a, desc_b)
-        Pxy = self.perm(desc_b, desc_a)
+        Cab,Cba  = self.fmap(source, target, desc_a, desc_b)
+        Pba = self.perm(desc_a, desc_b)
+        Pab = self.perm(desc_b, desc_a)
 
-        Cyx_p= torch.bmm(target['pinv'],torch.bmm(Pxy,source['basis']))
-        Cxy_p= torch.bmm(source['pinv'],torch.bmm(Pyx,target['basis']))
+        Cba_p= torch.bmm(target['pinv'],torch.bmm(Pab,source['basis']))
+        Cab_p= torch.bmm(source['pinv'],torch.bmm(Pba,target['basis']))
 
-        return {"Cxy":Cxy,"Cyx":Cyx,"Cxy_sup": Cxy_p,"Cyx_sup":Cyx_p}
+        return {"Cab":Cab,"Cba":Cba,"Cab_sup": Cab_p,"Cba_sup":Cba_p}
