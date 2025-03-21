@@ -250,9 +250,58 @@ class LearnedDescriptorsRegistry(WhichRegistry):
 
 class LossRegistry(WhichRegistry):
     MAP = {}
+    @classmethod
+    def get(cls, key):
+        """Get register object.
+
+        Parameters
+        ----------
+        key : str or tuple
+            Key. First element must be wrap name.
+
+        Returns
+        -------
+        Obj : class
+            Registered object.
+        """
+        if key is None:
+            key = cls.default
+        obj_name, missing_package = cls.MAP[key]
+        if missing_package:
+            raise ModuleNotFoundError(missing_package)
+
+        module = __import__(f"geomfum.dfm.losses", fromlist=[""])
+        Obj = getattr(module, obj_name)
+
+        return Obj
 
 class ModelRegistry(WhichRegistry):
     MAP = {}
+    @classmethod
+    def get(cls, key):
+        """Get register object.
+
+        Parameters
+        ----------
+        key : str or tuple
+            Key. First element must be wrap name.
+
+        Returns
+        -------
+        Obj : class
+            Registered object.
+        """
+        if key is None:
+            key = cls.default
+        obj_name, missing_package = cls.MAP[key]
+        if missing_package:
+            raise ModuleNotFoundError(missing_package)
+
+
+        module = __import__(f"geomfum.dfm.model", fromlist=[""])
+        Obj = getattr(module, obj_name)
+
+        return Obj
 
 
 

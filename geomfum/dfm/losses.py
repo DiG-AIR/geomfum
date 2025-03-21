@@ -15,7 +15,7 @@ class LossManager:
             - Loss_configs: Dictionary of loss names and weights.
         """
         self.losses = {
-            name: (LossRegistry.get(name), weight) for name, weight in loss_configs.items()
+            name: (LossRegistry.get(name)(), weight) for name, weight in loss_configs.items()
         }
 
     def compute_loss(self, outputs):

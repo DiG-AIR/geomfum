@@ -7,7 +7,7 @@ from geomfum.shape.mesh import TriangleMesh
 import numpy as np
 
 class ShapeDataset(Dataset):
-    def __init__(self, shape_dir, spectral=True, distances=True, k=30,device=None):
+    def __init__(self, shape_dir, spectral=True, distances=False, k=30,device=None):
         """
         ShapeDataset
         

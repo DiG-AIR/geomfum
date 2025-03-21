@@ -7,7 +7,10 @@ import torch
 from geomfum.descriptor.learned import LearnedDescriptor
 from geomfum.dfm.forward_functional_map import ForwardFunctionalMap
 from geomfum.dfm.permutation import PermutationModule
+from geomfum._registry import ModelRegistry
 
+def get_model_class(name):
+    return ModelRegistry.get(name)
 
 class BaseModel(torch.nn.Module):
     def __init__(self):
