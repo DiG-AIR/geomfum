@@ -21,11 +21,13 @@ requires-python = ">= 3.9"
 dependencies = ["numpy", "scipy", "scikit-learn", "meshio"]
 
 [project.optional-dependencies]
+scalablefm = ["pymeshlab", "multiprocess"]
 opt = [
     "pyfmaps",
     "robust-laplacian",
     "libigl",
     "geopext @ git+https://github.com/luisfpereira/geopext.git@2b7a7be1a8fdc6e5755e5f4bda88bc284065e829",
+    "geomfum[scalablefm]",
 ]
 rematching = [
     "Rematching @ git+https://github.com/filthynobleman/rematching.git@python-binding",
@@ -36,6 +38,7 @@ test = [
     "nbformat",
     "nbconvert",
     "ipykernel",
+    "ipywidgets",
     "geomfum[opt]",
 ]
 

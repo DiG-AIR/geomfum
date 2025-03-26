@@ -8,6 +8,7 @@ from geomfum.shape.hierarchical import HierarchicalShape
 from geomfum.shape.mesh import TriangleMesh
 
 
+
 class PyrmtHierarchicalMesh(HierarchicalShape):
     """Hierarchical mesh from PyRMT.
 
