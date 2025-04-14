@@ -95,6 +95,7 @@ class DeepFunctionalMapTrainer:
             with tqdm(total=len(self.val_loader), desc="Validation", unit="batch") as pbar:
                 for batch_idx, pair in enumerate(self.val_loader):
                     outputs = self.model(pair['source'], pair['target'])
+                    outputs.update({"source": pair['source'], "target": pair['target']})  # Add source and target to outputs
                     loss, loss_dict = self.loss_manager.compute_loss(outputs)
                     val_loss += loss.item()
                     pbar.set_postfix({"Loss": f"{loss.item():.4f}"})
