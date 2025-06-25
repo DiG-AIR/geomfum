@@ -1,6 +1,7 @@
 
 # GEOMFUM
-![Image](https://github.com/user-attachments/assets/c96d2596-03bf-4361-a79d-3e83515d5c0b)
+
+![Alt text](https://github.com/user-attachments/assets/c96d2596-03bf-4361-a79d-3e83515d5c0b)
 
 A Modular Python Package for Machine Learning with Functional Maps  
 <https://dl.acm.org/doi/10.1145/2185520.2185526>
