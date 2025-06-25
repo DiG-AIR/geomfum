@@ -1,6 +1,6 @@
 GEOMFUM
 =======
-![alt text](GeomFuMbianco.png)
+![Image](https://github.com/user-attachments/assets/432754f7-0c88-4d89-8248-202c31cb2124)
 
 A `pyFM <https://pypi.org/project/pyfmaps/>`_-inspired package for geometric processing with `functional maps <https://dl.acm.org/doi/10.1145/2185520.2185526>`_.
 
