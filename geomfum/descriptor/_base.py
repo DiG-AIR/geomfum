@@ -15,12 +15,15 @@ class SpectralDescriptor(Descriptor, abc.ABC):
         domain points.
     use_landmarks : bool
         Whether to use landmarks.
+    k: int, optional
+        Number of eigenvalues and eigenvectors to use. If None, basis.use_k is used.
     """
 
-    def __init__(self, domain, use_landmarks=False):
+    def __init__(self, domain, use_landmarks=False, k=None):
         super().__init__()
         self.domain = domain
         self.use_landmarks = use_landmarks
+        self.k=k
 
     @abc.abstractmethod
     def __call__(self, shape, domain=None):

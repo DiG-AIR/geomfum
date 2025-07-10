@@ -77,8 +77,7 @@ class ShapeDataset(Dataset):
             base_name, _ = os.path.splitext(filename)
             # preprocess
             if spectral:
-                mesh.laplacian.find_spectrum(spectrum_size=200, set_as_basis=True)
-                mesh.basis.use_k = self.k
+                mesh.laplacian.find_spectrum(spectrum_size=k, set_as_basis=True)
 
             self.meshes[filename] = mesh
 

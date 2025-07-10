@@ -18,6 +18,7 @@ class BaseFeatureExtractor(abc.ABC):
 
     def __init__(self):
         super().__init__()
+        self.model = None  # Placeholder, must be set in subclass
 
     def load_from_path(self, path):
         """Load model parameters from the provided file path.

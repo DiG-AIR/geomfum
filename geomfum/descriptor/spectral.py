@@ -111,10 +111,11 @@ class HeatKernelSignature(WhichRegistryMixins, SpectralDescriptor):
 
     _Registry = HeatKernelSignatureRegistry
 
-    def __init__(self, scale=True, n_domain=3, domain=None):
+    def __init__(self, scale=True, n_domain=3, domain=None, k=None):
         super().__init__(
             domain or (lambda shape: hks_default_domain(shape, n_domain=n_domain)),
             use_landmarks=False,
+            k=k,
         )
         self.scale = scale
 
@@ -131,6 +132,10 @@ class HeatKernelSignature(WhichRegistryMixins, SpectralDescriptor):
         descr : array-like, shape=[n_domain, n_vertices]
             Descriptor.
         """
+        if self.k is not None:
+            if shape.basis.spectrum_size != self.k:
+                shape.basis.use_k = self.k
+
         domain = self.domain(shape) if callable(self.domain) else self.domain
 
         vals_term = gs.exp(-la.scalarvecmul(domain, shape.basis.vals))
@@ -147,10 +152,11 @@ class WaveKernelSignature(WhichRegistryMixins, SpectralDescriptor):
 
     _Registry = WaveKernelSignatureRegistry
 
-    def __init__(self, scale=True, sigma=None, n_domain=3, domain=None):
+    def __init__(self, scale=True, sigma=None, n_domain=3, domain=None, k=None):
         super().__init__(
             domain or WksDefaultDomain(n_domain=n_domain, sigma=sigma),
             use_landmarks=False,
+            k=k,
         )
         self.scale = scale
         self.sigma = sigma
@@ -168,6 +174,11 @@ class WaveKernelSignature(WhichRegistryMixins, SpectralDescriptor):
         descr : array-like, shape=[n_domain, n_vertices]
             Descriptor.
         """
+
+        if self.k is not None:
+            if shape.basis.spectrum_size != self.k:
+                shape.basis.use_k = self.k
+
         if callable(self.domain):
             # TODO: document domain better
             domain, sigma = self.domain(shape)

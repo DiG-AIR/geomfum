@@ -103,9 +103,9 @@ class OrthonormalityLoss(nn.Module):
         Parameters
         ----------
         fmap12 : torch.Tensor
-            Functional map tensor of shape ( spectrum_size_a, spectrum_size_b).
-        fmap21 : torch.Tensor
             Functional map tensor of shape ( spectrum_size_b, spectrum_size_a).
+        fmap21 : torch.Tensor
+            Functional map tensor of shape ( spectrum_size_a, spectrum_size_b).
 
         Returns
         -------
@@ -113,10 +113,11 @@ class OrthonormalityLoss(nn.Module):
             Scalar tensor representing the weighted mean squared Frobenius norm between C^T C and the identity matrix.
         """
         metric = SquaredFrobeniusLoss()
-        eye = torch.eye(fmap12.shape[0], device=fmap12.device)
+        eye_b = torch.eye(fmap12.shape[0], device=fmap12.device)
+        eye_a = torch.eye(fmap21.shape[1], device=fmap21.device)
         return self.weight * (
-            metric(torch.mm(fmap12.T, fmap12), eye)
-            + metric(torch.mm(fmap21.T, fmap21), eye)
+            metric(torch.mm(fmap12.T, fmap12), eye_b)
+            + metric(torch.mm(fmap21.T, fmap21), eye_a)
         )
 
 
@@ -143,9 +144,9 @@ class BijectivityLoss(nn.Module):
         Parameters
         ----------
         fmap12 : torch.Tensor
-            Functional map tensor from shape 1 to shape 2 of shape (spectrum_size_a, spectrum_size_b).
+            Functional map tensor from shape 1 to shape 2 of shape (spectrum_size_b, spectrum_size_a).
         fmap21 : torch.Tensor
-            Functional map tensor from shape 2 to shape 1 of shape (spectrum_size_b, spectrum_size_a).
+            Functional map tensor from shape 2 to shape 1 of shape (spectrum_size_a, spectrum_size_b).
 
         Returns
         -------
@@ -153,9 +154,10 @@ class BijectivityLoss(nn.Module):
             Scalar tensor representing the weighted mean squared Frobenius norm between fmap12 fmap21 and the identity matrix, and between fmap21 fmap12 and the identity matrix.
         """
         metric = SquaredFrobeniusLoss()
-        eye = torch.eye(fmap12.shape[1], device=fmap12.device)
-        return self.weight * metric(torch.mm(fmap12, fmap21), eye) + metric(
-            torch.mm(fmap21, fmap12), eye
+        eye_b = torch.eye(fmap12.shape[0], device=fmap12.device)
+        eye_a = torch.eye(fmap21.shape[1], device=fmap21.device)
+        return self.weight * metric(torch.mm(fmap12, fmap21), eye_b) + self.weight * metric(
+            torch.mm(fmap21, fmap12), eye_a
         )
 
 
@@ -182,7 +184,7 @@ class LaplacianCommutativityLoss(nn.Module):
         Parameters
         ----------
         fmap12 : torch.Tensor
-            Functional map tensor from source to target shape, of shape ( spectrum_size_a, spectrum_size_b ).
+            Functional map tensor from source to target shape, of shape ( spectrum_size_b, spectrum_size_a ).
         mesh_a : TriangleMesh
             TriangleMesh object containing source shape information.
         mesh_b : TriangleMesh
@@ -195,46 +197,9 @@ class LaplacianCommutativityLoss(nn.Module):
         """
         metric = SquaredFrobeniusLoss()
         return self.weight * metric(
-            torch.einsum("bc,c->bc", fmap12, mesh_a.basis.vals),
-            torch.einsum("b,bc->bc", mesh_b.basis.vals, fmap12),
+            torch.einsum("bc,c->bc", fmap12, mesh_b.basis.vals),
+            torch.einsum("b,bc->bc", mesh_a.basis.vals, fmap12),
         )
-
-
-class Fmap_Supervision(nn.Module):
-    """
-    Computes the supervision loss between predicted and ground truth functional maps.
-
-    Parameters
-    ----------
-    weight : float, optional
-        Weight for the loss term (default: 1).
-    """
-
-    def __init__(self, weight=1):
-        super().__init__()
-        self.weight = weight
-
-    required_inputs = ["fmap12", "fmap12_sup"]
-
-    def forward(self, fmap12, fmap12_sup):
-        """
-        Forward pass.
-
-        Parameters
-        ----------
-        fmap12 : torch.Tensor
-            Functional map tensor from source to target shape, of shape (batch_size, dim_out, dim_in).
-        fmap12_sup : torch.Tensor
-            Supervised functional map tensor from source to target shape, of shape (batch_size, dim_out, dim_in).
-
-        Returns
-        -------
-        torch.Tensor
-            Scalar tensor representing the weighted squared Frobenius norm of the difference between predicted and supervised functional maps.
-        """
-        metric = SquaredFrobeniusLoss()
-        return self.weight * metric(fmap12, fmap12_sup)
-
 
 class GeodesicError(nn.Module):
     """
