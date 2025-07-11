@@ -5,7 +5,12 @@ import pyFM.signatures as sg
 import pytest
 from polpo.testing import DataBasedParametrizer
 
-from geomfum.descriptor.spectral import HeatKernelSignature, WaveKernelSignature
+from geomfum.descriptor.spectral import (
+    HeatKernelSignature,
+    WaveKernelSignature,
+    LandmarkHeatKernelSignature,
+    LandmarkWaveKernelSignature,
+)
 from tests.cases.cmp import SpectralDescriptorCmpCase
 from tests.utils import landmark_randomly
 
@@ -99,16 +104,26 @@ def spectral_descriptors(request):
         shapes.set_landmarks(landmark_randomly)
 
     if descr_type == "hks":
-        descriptor_a = HeatKernelSignature.from_registry(
-            scale=True, n_domain=n_domain, use_landmarks=use_landmarks
-        )
+        if not use_landmarks:
+            descriptor_a = HeatKernelSignature.from_registry(
+                scale=True, n_domain=n_domain
+            )
+        else:
+            descriptor_a = LandmarkHeatKernelSignature.from_registry(
+                scale=True, n_domain=n_domain
+            )
         descriptor_b = _pyfm_hks(num_T=n_domain, use_landmarks=use_landmarks)
 
     elif descr_type == "wks":
         sigma = np.random.uniform(low=0.1, high=2.0, size=1)[0]
-        descriptor_a = WaveKernelSignature.from_registry(
-            scale=True, n_domain=n_domain, sigma=sigma, use_landmarks=use_landmarks
-        )
+        if not use_landmarks:
+            descriptor_a = WaveKernelSignature.from_registry(
+                scale=True, n_domain=n_domain, sigma=sigma
+            )
+        else:
+            descriptor_a = LandmarkWaveKernelSignature.from_registry(
+                scale=True, n_domain=n_domain, sigma=sigma
+            )
         descriptor_b = _pyfm_wks(
             num_T=n_domain, sigma=sigma, use_landmarks=use_landmarks
         )

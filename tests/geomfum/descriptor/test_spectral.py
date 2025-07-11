@@ -3,7 +3,12 @@ import random
 import pytest
 from polpo.testing import DataBasedParametrizer
 
-from geomfum.descriptor.spectral import HeatKernelSignature, WaveKernelSignature
+from geomfum.descriptor.spectral import (
+    HeatKernelSignature,
+    WaveKernelSignature,
+    LandmarkHeatKernelSignature,
+    LandmarkWaveKernelSignature,
+)
 from tests.cases.cmp import SpectralDescriptorCmpCase
 from tests.utils import landmark_randomly
 
@@ -13,14 +18,18 @@ from .data.spectral import SpectralDescriptorCmpData
 @pytest.fixture(
     scope="class",
     params=[
-        ("hks", False, False),
-        ("hks", True, False),
-        ("wks", False, False),
-        ("wks", True, False),
+        ("hks", False),
+        ("hks", True),
+        ("wks", False),
+        ("wks", True),
+        ("l-hks", False),
+        ("l-hks", True),
+        ("l-wks", False),
+        ("l-wks", True),
     ],
 )
 def spectral_descriptors(request):
-    descr_type, scale, use_landmarks = request.param
+    descr_type, scale = request.param
 
     n_domain = random.randint(2, 5)
     request.cls.spectrum_size = spectrum_size = random.randint(3, 5)
@@ -29,20 +38,26 @@ def spectral_descriptors(request):
     shapes = testing_data.shapes
 
     shapes.set_spectrum_finder(spectrum_size=spectrum_size)
-
-    if use_landmarks:
-        shapes.set_landmarks(landmark_randomly)
+    shapes.set_landmarks(landmark_randomly)
 
     if descr_type == "hks":
         descriptor_a = HeatKernelSignature(n_domain=n_domain, scale=scale)
-        descriptor_b = HeatKernelSignature.from_registry(
-            scale=scale, n_domain=n_domain, use_landmarks=use_landmarks
-        )
+        descriptor_b = HeatKernelSignature.from_registry(scale=scale, n_domain=n_domain)
 
     elif descr_type == "wks":
         descriptor_a = WaveKernelSignature(scale=scale, n_domain=n_domain)
-        descriptor_b = WaveKernelSignature.from_registry(
-            scale=scale, n_domain=n_domain, use_landmarks=use_landmarks
+        descriptor_b = WaveKernelSignature.from_registry(scale=scale, n_domain=n_domain)
+
+    elif descr_type == "l-hks":
+        descriptor_a = LandmarkHeatKernelSignature(n_domain=n_domain, scale=scale)
+        descriptor_b = LandmarkHeatKernelSignature.from_registry(
+            scale=scale, n_domain=n_domain
+        )
+
+    elif descr_type == "l-wks":
+        descriptor_a = LandmarkWaveKernelSignature(scale=scale, n_domain=n_domain)
+        descriptor_b = LandmarkWaveKernelSignature.from_registry(
+            scale=scale, n_domain=n_domain
         )
 
     else:

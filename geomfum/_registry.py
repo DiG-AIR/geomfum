@@ -297,7 +297,17 @@ class HeatKernelSignatureRegistry(Registry):
     MAP = {}
 
 
+class LandmarkHeatKernelSignatureRegistry(Registry):
+    has_internal = True
+    MAP = {}
+
+
 class WaveKernelSignatureRegistry(Registry):
+    has_internal = True
+    MAP = {}
+
+
+class LandmarkWaveKernelSignatureRegistry(Registry):
     has_internal = True
     MAP = {}
 

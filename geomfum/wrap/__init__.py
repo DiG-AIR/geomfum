@@ -6,6 +6,8 @@ from geomfum._registry import (
     register_heat_distance_metric,
     register_heat_kernel_signature,
     register_hierarchical_mesh,
+    register_landmark_heat_kernel_signature,
+    register_landmark_wave_kernel_signature,
     register_laplacian_finder,
     register_mesh_plotter,
     register_poisson_sampler,
@@ -43,6 +45,15 @@ register_laplacian_finder(
 register_heat_kernel_signature(
     "pyfm", "PyfmHeatKernelSignature", requires="pyFM", as_default=True
 )
+
+register_landmark_heat_kernel_signature(
+    "pyfm", "PyfmLandmarkHeatKernelSignature", requires="pyFM", as_default=True
+)
+
+register_landmark_wave_kernel_signature(
+    "pyfm", "PyfmLandmarkWaveKernelSignature", requires="pyFM", as_default=True
+)
+
 register_wave_kernel_signature(
     "pyfm", "PyfmWaveKernelSignature", requires="pyFM", as_default=True
 )
