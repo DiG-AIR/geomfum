@@ -1,19 +1,14 @@
 """Shape dataset for PyTorch."""
 
-import hashlib
 import os
 import os.path as osp
-import warnings
-from pathlib import Path
 
 import geomstats.backend as gs
-import meshio
 import numpy as np
 import scipy
 import torch
 from torch.utils.data import Dataset
 
-import geomfum.backend as xgs
 from geomfum.metric import VertexEuclideanMetric
 from geomfum.metric.mesh import ScipyGraphShortestPathMetric
 from geomfum.shape import PointCloud, TriangleMesh
@@ -68,11 +63,14 @@ def get_cached_shape_data(filepath, shape_type, spectral, k, cache_dir=None, ove
                 evecs = npzfile['eigenvectors'][:, :k]
                 pinv = npzfile['pinv'][:k, :]
                 mass_matrix = npzfile['mass_matrix']
+                stiffness_matrix = npzfile['stiffness_matrix']
                 
                 # Set cached spectral data on shape
                 shape.basis.full_vals = gs.array(evals)
                 shape.basis.full_vecs = gs.array(evecs)
                 shape.laplacian._mass_matrix = gs.array(mass_matrix)
+                shape.laplacian._stiffness_matrix = gs.array(stiffness_matrix)
+                shape.basis.pinv = gs.array(pinv)
                 
                 found = True
                 break
@@ -90,6 +88,7 @@ def get_cached_shape_data(filepath, shape_type, spectral, k, cache_dir=None, ove
             evecs_np = gs.to_numpy(shape.basis.full_vecs).astype(np.float32)
             mass_np = gs.to_numpy(shape.laplacian._mass_matrix).astype(np.float32)
             pinv_np = gs.to_numpy(shape.basis.pinv).astype(np.float32)
+            stiffness_matrix_np = gs.to_numpy(shape.laplacian._stiffness_matrix).astype(np.float32)
             np.savez(
                 cache_path,
                 vertices=verts_np.astype(np.float32),
@@ -99,7 +98,7 @@ def get_cached_shape_data(filepath, shape_type, spectral, k, cache_dir=None, ove
                 eigenvectors=evecs_np,
                 mass_matrix=mass_np,
                 pinv=pinv_np,
-            )
+                stiffness_matrix=stiffness_matrix_np)
     
     return shape
 
