@@ -83,7 +83,7 @@ def get_cached_shape_data(
                 # Set cached spectral data on shape
                 shape.basis.full_vals = gs.array(evals)
                 shape.basis.full_vecs = gs.array(evecs)
-                shape.basis.pinv = gs.array(pinv)
+                shape.basis._pinv = gs.array(pinv)
 
                 # Convert scipy sparse matrices back to your format
                 shape.laplacian._mass_matrix = xgs.from_scipy_sparse(mass_matrix)
