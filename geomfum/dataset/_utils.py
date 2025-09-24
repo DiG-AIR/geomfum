@@ -47,7 +47,6 @@ class DownloadableFile:
         return file_path
 
 
-
 def hash_arrays(*arrays):
     """Create hash from multiple arrays (similar to DiffusionNet)."""
     hasher = hashlib.sha256()

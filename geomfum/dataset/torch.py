@@ -68,15 +68,28 @@ def get_cached_shape_data(
                 evals = npzfile["eigenvalues"][:k]
                 evecs = npzfile["eigenvectors"][:, :k]
                 pinv = npzfile["pinv"][:k, :]
-                mass_matrix = npzfile["mass_matrix"]
-                stiffness_matrix = npzfile["stiffness_matrix"]
+
+                # NEW: Reconstruct sparse matrices properly
+                def read_sparse_matrix(prefix):
+                    data = npzfile[prefix + "_data"]
+                    indices = npzfile[prefix + "_indices"]
+                    indptr = npzfile[prefix + "_indptr"]
+                    shape = npzfile[prefix + "_shape"]
+                    return scipy.sparse.csc_matrix((data, indices, indptr), shape=shape)
+
+                mass_matrix = read_sparse_matrix("mass")
+                stiffness_matrix = read_sparse_matrix("stiffness")
 
                 # Set cached spectral data on shape
                 shape.basis.full_vals = gs.array(evals)
                 shape.basis.full_vecs = gs.array(evecs)
-                shape.laplacian._mass_matrix = gs.array(mass_matrix)
-                shape.laplacian._stiffness_matrix = gs.array(stiffness_matrix)
                 shape.basis.pinv = gs.array(pinv)
+
+                # Convert scipy sparse matrices back to your format
+                shape.laplacian._mass_matrix = xgs.from_scipy_sparse(mass_matrix)
+                shape.laplacian._stiffness_matrix = xgs.from_scipy_sparse(
+                    stiffness_matrix
+                )
 
                 found = True
                 break
@@ -92,12 +105,17 @@ def get_cached_shape_data(
         if cache_dir:
             evals_np = gs.to_numpy(shape.basis.full_vals).astype(np.float32)
             evecs_np = gs.to_numpy(shape.basis.full_vecs).astype(np.float32)
-            mass_np = xgs.sparse.to_scipy_csc(shape.laplacian._mass_matrix)
             pinv_np = gs.to_numpy(shape.basis.pinv).astype(np.float32)
-            stiffness_matrix_np = xgs.sparse.to_scipy_csc(
-                shape.laplacian._stiffness_matrix
-            )
 
+            # NEW: Convert sparse matrices to scipy format for saving
+            mass_scipy = xgs.sparse.to_scipy_csc(shape.laplacian._mass_matrix)
+            stiffness_scipy = xgs.sparse.to_scipy_csc(shape.laplacian._stiffness_matrix)
+
+            # Convert to float32 for storage efficiency
+            mass_scipy = mass_scipy.astype(np.float32)
+            stiffness_scipy = stiffness_scipy.astype(np.float32)
+
+            # Save sparse matrices in DiffusionNet style
             np.savez(
                 cache_path,
                 vertices=verts_np.astype(np.float32),
@@ -105,9 +123,17 @@ def get_cached_shape_data(
                 k_eig=k,
                 eigenvalues=evals_np,
                 eigenvectors=evecs_np,
-                mass_matrix=mass_np,
                 pinv=pinv_np,
-                stiffness_matrix=stiffness_matrix_np,
+                # Mass matrix sparse components
+                mass_data=mass_scipy.data,
+                mass_indices=mass_scipy.indices,
+                mass_indptr=mass_scipy.indptr,
+                mass_shape=mass_scipy.shape,
+                # Stiffness matrix sparse components
+                stiffness_data=stiffness_scipy.data,
+                stiffness_indices=stiffness_scipy.indices,
+                stiffness_indptr=stiffness_scipy.indptr,
+                stiffness_shape=stiffness_scipy.shape,
             )
 
     return shape
