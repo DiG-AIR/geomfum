@@ -103,25 +103,21 @@ def get_cached_shape_data(
     if spectral and not found:
         shape.laplacian.find_spectrum(spectrum_size=k, set_as_basis=True)
         shape.gradient.gradient_matrix
-        # Save to cache
         if cache_dir:
-            evals_np = gs.to_numpy(shape.basis.full_vals).astype(np.float32)
-            evecs_np = gs.to_numpy(shape.basis.full_vecs).astype(np.float32)
-            pinv_np = gs.to_numpy(shape.basis.pinv).astype(np.float32)
+            evals_np = gs.to_numpy(shape.basis.full_vals)
+            evecs_np = gs.to_numpy(shape.basis.full_vecs)
+            pinv_np = gs.to_numpy(shape.basis.pinv)
 
-            # NEW: Convert sparse matrices to scipy format for saving
             mass_scipy = xgs.sparse.to_scipy_csc(shape.laplacian._mass_matrix)
             stiffness_scipy = xgs.sparse.to_scipy_csc(shape.laplacian._stiffness_matrix)
 
-            # Convert to float32 for storage efficiency
-            mass_scipy = mass_scipy.astype(np.float32)
-            stiffness_scipy = stiffness_scipy.astype(np.float32)
+            mass_scipy = mass_scipy
+            stiffness_scipy = stiffness_scipy
 
             gradient_scipy = xgs.sparse.to_scipy_csc(shape.gradient._gradient_matrix)
-            # Save sparse matrices in DiffusionNet style
             np.savez(
                 cache_path,
-                vertices=verts_np.astype(np.float32),
+                vertices=verts_np,
                 faces=faces_np.astype(np.int32) if faces_np is not None else None,
                 k_eig=k,
                 eigenvalues=evals_np,
