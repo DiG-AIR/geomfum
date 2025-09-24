@@ -1,6 +1,7 @@
 import logging
 import os
 from urllib.request import urlretrieve
+import hashlib
 
 
 class DownloadableFile:
@@ -44,3 +45,13 @@ class DownloadableFile:
             urlretrieve(self.url, file_path)
 
         return file_path
+
+
+
+def hash_arrays(*arrays):
+    """Create hash from multiple arrays (similar to DiffusionNet)."""
+    hasher = hashlib.sha256()
+    for arr in arrays:
+        if arr is not None:
+            hasher.update(arr.tobytes())
+    return hasher.hexdigest()[:16]  # Use first 16 chars
