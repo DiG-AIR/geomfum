@@ -69,7 +69,6 @@ def get_cached_shape_data(
                 evecs = npzfile["eigenvectors"][:, :k]
                 pinv = npzfile["pinv"][:k, :]
 
-                # NEW: Reconstruct sparse matrices properly
                 def read_sparse_matrix(prefix):
                     data = npzfile[prefix + "_data"]
                     indices = npzfile[prefix + "_indices"]
@@ -79,6 +78,8 @@ def get_cached_shape_data(
 
                 mass_matrix = read_sparse_matrix("mass")
                 stiffness_matrix = read_sparse_matrix("stiffness")
+                gradient_x_matrix = read_sparse_matrix("gradient_x")
+                gradient_y_matrix = read_sparse_matrix("gradient_y")
 
                 # Set cached spectral data on shape
                 shape.basis.full_vals = gs.array(evals)
@@ -90,6 +91,9 @@ def get_cached_shape_data(
                 shape.laplacian._stiffness_matrix = xgs.from_scipy_sparse(
                     stiffness_matrix
                 )
+                # Instantiate a complex gradient matrix using gradient_x_matrix as real and gradient_y_matrix as imaginary part
+                gradient_matrix = gradient_x_matrix + 1j * gradient_y_matrix
+                shape.gradient._gradient_matrix = xgs.from_scipy_sparse(gradient_matrix)
 
                 found = True
                 break
@@ -115,6 +119,8 @@ def get_cached_shape_data(
             mass_scipy = mass_scipy.astype(np.float32)
             stiffness_scipy = stiffness_scipy.astype(np.float32)
 
+            gradient_matrix_x = xgs.sparse.to_csc(shape.gradient._gradient_matrix).real
+            gradient_matrix_y = xgs.sparse.to_csc(shape.gradient._gradient_matrix).imag
             # Save sparse matrices in DiffusionNet style
             np.savez(
                 cache_path,
@@ -134,6 +140,15 @@ def get_cached_shape_data(
                 stiffness_indices=stiffness_scipy.indices,
                 stiffness_indptr=stiffness_scipy.indptr,
                 stiffness_shape=stiffness_scipy.shape,
+                # gradient matrix components
+                gradient_x_data=gradient_matrix_x.data,
+                gradient_x_indices=gradient_matrix_x.indices,
+                gradient_x_indptr=gradient_matrix_x.indptr,
+                gradient_x_shape=gradient_matrix_x.shape,
+                gradient_y_data=gradient_matrix_y.data,
+                gradient_y_indices=gradient_matrix_y.indices,
+                gradient_y_indptr=gradient_matrix_y.indptr,
+                gradient_y_shape=gradient_matrix_y.shape,
             )
 
     return shape
