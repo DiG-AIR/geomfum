@@ -223,6 +223,94 @@ class SoftmaxNeighborFinder(BaseNeighborFinder, nn.Module):
         
         return P
 
+class GPUEuclideanNeighborFinder(BaseNeighborFinder, nn.Module):
+    """GPU-based Euclidean neighbor finder.
+
+    Finds exact nearest neighbors using Euclidean distance on GPU.
+    Uses brute-force distance computation for exact results.
+
+    Parameters
+    ----------
+    n_neighbors : int
+        Number of neighbors.
+    """
+
+    def __init__(self, n_neighbors=1):
+        BaseNeighborFinder.__init__(self, n_neighbors=n_neighbors)
+        nn.Module.__init__(self)
+
+    def __call__(self, X, Y):
+        """Return indices of the points in `X` nearest to the points in `Y`.
+
+        Parameters
+        ----------
+        X : array-like, shape=[n_points_x, n_features]
+            Reference points.
+        Y : array-like, shape=[n_points_y, n_features]
+            Query points.
+
+        Returns
+        -------
+        neigs : array-like, shape=[n_points_x, n_neighbors]
+            Indices of the nearest neighbors in Y for each point in X.
+        """
+        return self.forward(X, Y)
+
+    def forward(self, X, Y):
+        """Find k nearest neighbors using exact Euclidean distance.
+
+        Parameters
+        ----------
+        X : array-like, shape=[n_points_x, n_features]
+            Reference points.
+        Y : array-like, shape=[n_points_y, n_features]
+            Query points.
+
+        Returns
+        -------
+        neigs : array-like, shape=[n_points_x, n_neighbors]
+            Indices of the nearest neighbors in Y for each point in X.
+        """
+        # Compute squared Euclidean distances
+        # ||x - y||^2 = ||x||^2 + ||y||^2 - 2<x,y>
+        X_norm_sq = torch.sum(X**2, dim=1, keepdim=True)  # [n_points_x, 1]
+        Y_norm_sq = torch.sum(Y**2, dim=1, keepdim=False)  # [n_points_y]
+        similarity = torch.mm(X, Y.T)  # [n_points_x, n_points_y]
+        
+        distances = X_norm_sq + Y_norm_sq - 2 * similarity
+        
+        if self.n_neighbors == 1:
+            # For single neighbor, use argmin (faster than topk)
+            indices = torch.argmin(distances, dim=-1, keepdim=True)
+        else:
+            # Use topk with smallest=True for minimum distances
+            indices = torch.topk(distances, self.n_neighbors, dim=-1, 
+                               largest=False, sorted=False)[1]
+        
+        return indices
+
+    def distance_matrix(self, X, Y):
+        """Compute full distance matrix between X and Y.
+
+        Parameters
+        ----------
+        X : array-like, shape=[n_points_x, n_features]
+            Reference points.
+        Y : array-like, shape=[n_points_y, n_features]
+            Query points.
+
+        Returns
+        -------
+        distances : array-like, shape=[n_points_x, n_points_y]
+            Euclidean distance matrix.
+        """
+        X_norm_sq = torch.sum(X**2, dim=1, keepdim=True)
+        Y_norm_sq = torch.sum(Y**2, dim=1, keepdim=False)
+        similarity = torch.mm(X, Y.T)
+        
+        distances = X_norm_sq + Y_norm_sq - 2 * similarity
+        return torch.sqrt(torch.clamp(distances, min=0))  # Clamp for numerical stability
+
 class SinkhornP2pFromFmConverter(P2pFromFmConverter):
     """Pointwise map from functional map using Sinkhorn filters.
 
