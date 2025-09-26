@@ -451,5 +451,5 @@ class P2pFromNamConverter(BaseP2pFromFmConverter):
         emb1 = nam(xgs.to_torch(basis_a.full_vecs[:, :k2]).to(nam.device).double())
         emb2 = xgs.to_torch(basis_b.full_vecs[:, :k1]).to(nam.device).double()
 
-        p2p = self.neighbor_finder(emb2.detach().cpu(), emb1.detach().cpu()).flatten()
+        p2p = self.neighbor_finder(emb2.detach(), emb1.detach()).flatten()
         return p2p
