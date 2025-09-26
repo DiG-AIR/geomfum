@@ -140,6 +140,7 @@ class P2pFromFmConverter(BaseP2pFromFmConverter):
         return p2p
 
 
+
 class SoftmaxNeighborFinder(BaseNeighborFinder, nn.Module):
     """Softmax neighbor finder.
 
@@ -190,11 +191,17 @@ class SoftmaxNeighborFinder(BaseNeighborFinder, nn.Module):
         neigs : array-like, shape=[n_points_x, n_neighbors]
             Indices of the nearest neighbors in Y for each point in X.
         """
-        P = self.softmax_matrix(X, Y)
-        # Get the indices of the top-k (self.n_neighbors) highest values for each row
-        indices = torch.topk(P, self.n_neighbors, dim=-1)[1]
+        similarity = torch.mm(X, Y.T)
+        
+        if self.n_neighbors == 1:
+            # For single neighbor, use argmax (faster than topk)
+            indices = torch.argmax(similarity / self.tau, dim=-1, keepdim=True)
+        else:
+            # Use topk but with optimizations
+            scaled_similarity = similarity / self.tau
+            indices = torch.topk(scaled_similarity, self.n_neighbors, dim=-1, sorted=False)[1]
+        
         return indices
-
     def softmax_matrix(self, X, Y):
         """Compute the permutation matrix P as a softmax of the similarity.
 
@@ -210,15 +217,11 @@ class SoftmaxNeighborFinder(BaseNeighborFinder, nn.Module):
         P : array-like, shape=[n_points_x, n_points_y]
             Permutation matrix, where each row sums to 1.
         """
-        similarity = torch.mm( X, Y.T)
-
-        P = torch.exp(
-            similarity / self.tau
-            - torch.logsumexp(similarity / self.tau, dim=-1, keepdim=True)
-        )
-
+        similarity = torch.mm(X, Y.T)
+        
+        P = torch.softmax(similarity / self.tau, dim=-1)
+        
         return P
-
 
 class SinkhornP2pFromFmConverter(P2pFromFmConverter):
     """Pointwise map from functional map using Sinkhorn filters.
