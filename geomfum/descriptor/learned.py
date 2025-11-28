@@ -5,7 +5,7 @@ The learned descriptor is a descriptor that uses a neural network to compute fea
 
 import abc
 
-import geomstats.backend as gs
+import gsops.backend as gs
 import torch
 import torch.nn as nn
 

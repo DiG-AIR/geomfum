@@ -35,6 +35,11 @@ class DeepFunctionalMapTrainer:
         Dataset for the validation.
     optimizer : torch.optim.Optimizer
         Optimizer for updating model parameters.
+    scheduler : torch.optim.lr_scheduler, optional
+        Learning rate scheduler for adjusting the learning rate during training
+        (default is None).
+    scheduler_step_on : str, optional
+        When to step the scheduler: "epoch" or "batch" (default is "epoch").
     epochs : int, optional
         Number of epochs to train the model (default is 100).
     device : str, optional
@@ -55,6 +60,8 @@ class DeepFunctionalMapTrainer:
         train_loss_manager=None,
         val_loss_manager=None,
         optimizer=None,
+        scheduler=None,
+        scheduler_step_on="epoch",
         epochs=100,
         device="cpu",
         checkpoint_path=None,
@@ -75,6 +82,8 @@ class DeepFunctionalMapTrainer:
             self.optimizer = torch.optim.Adam(
                 self.model.parameters(), lr=1e-3, weight_decay=1e-5
             )
+        self.scheduler = scheduler
+        self.scheduler_step_on = scheduler_step_on
         self.epochs = epochs
         self.device = device
         self.checkpoint_path = checkpoint_path
@@ -96,13 +105,13 @@ class DeepFunctionalMapTrainer:
             for idx in indices:
                 pair = self.train_set[idx]  # Access item by index
                 self.optimizer.zero_grad()
-                mesh_a = pair["source"]["mesh"]
-                mesh_b = pair["target"]["mesh"]
-                outputs = self.model(mesh_a, mesh_b)
+                shape_a = pair["source"]["shape"]
+                shape_b = pair["target"]["shape"]
+                outputs = self.model(shape_a, shape_b)
                 outputs.update(
                     {
-                        "mesh_a": mesh_a,
-                        "mesh_b": mesh_b,
+                        "shape_a": shape_a,
+                        "shape_b": shape_b,
                     }
                 )
                 if get_dataset_attr(self.train_set.shape_data, "correspondences"):
@@ -124,6 +133,11 @@ class DeepFunctionalMapTrainer:
 
                 loss.backward()
                 self.optimizer.step()
+
+                # Step scheduler if configured to step on batch
+                if self.scheduler and self.scheduler_step_on == "batch":
+                    self.scheduler.step()
+
                 running_loss += loss.item()
                 pbar.set_postfix({"Loss": f"{loss.item():.4f}"})
                 pbar.update(1)
@@ -138,13 +152,13 @@ class DeepFunctionalMapTrainer:
         with torch.no_grad():
             with tqdm(total=len(self.val_set), desc="Validation", unit="batch") as pbar:
                 for pair in self.val_set:
-                    mesh_a = pair["source"]["mesh"]
-                    mesh_b = pair["target"]["mesh"]
-                    outputs = self.model(mesh_a, mesh_b)
+                    shape_a = pair["source"]["shape"]
+                    shape_b = pair["target"]["shape"]
+                    outputs = self.model(shape_a, shape_b)
                     outputs.update(
                         {
-                            "mesh_a": mesh_a,
-                            "mesh_b": mesh_b,
+                            "shape_a": shape_a,
+                            "shape_b": shape_b,
                         }
                     )
                     if get_dataset_attr(self.val_set.shape_data, "correspondences"):
@@ -188,6 +202,19 @@ class DeepFunctionalMapTrainer:
                 f"Epoch [{epoch + 1}/{self.epochs}] - Average Validation Loss: {avg_val_loss:.4f}"
             )
 
+            # Step scheduler if configured to step on epoch
+            if self.scheduler and self.scheduler_step_on == "epoch":
+                # Handle different types of schedulers
+                if isinstance(
+                    self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau
+                ):
+                    # ReduceLROnPlateau needs a metric to monitor
+                    metric_value = val_metrics.get(self.monitor_metric, avg_val_loss)
+                    self.scheduler.step(metric_value)
+                else:
+                    # Other schedulers don't need arguments
+                    self.scheduler.step()
+
             metric_value = val_metrics.get(self.monitor_metric, avg_val_loss)
             improved = (
                 metric_value < best_metric
@@ -196,15 +223,46 @@ class DeepFunctionalMapTrainer:
             )
             if self.checkpoint_path and improved:
                 best_metric = metric_value
-                torch.save(
-                    {
-                        "model_state_dict": self.model.state_dict(),
-                        "optimizer_state_dict": self.optimizer.state_dict(),
-                        "epoch": epoch,
-                        "best_metric": best_metric,
-                    },
-                    self.checkpoint_path,
-                )
+                checkpoint_dict = {
+                    "model_state_dict": self.model.state_dict(),
+                    "optimizer_state_dict": self.optimizer.state_dict(),
+                    "epoch": epoch,
+                    "best_metric": best_metric,
+                }
+                # Save scheduler state if scheduler exists
+                if self.scheduler:
+                    checkpoint_dict["scheduler_state_dict"] = (
+                        self.scheduler.state_dict()
+                    )
+
+                torch.save(checkpoint_dict, self.checkpoint_path)
                 logging.info(
                     f"Checkpoint saved at epoch {epoch + 1} with {self.monitor_metric}: {metric_value:.4f}"
                 )
+
+    def load_checkpoint(self, checkpoint_path):
+        """Load model, optimizer, and scheduler states from a checkpoint.
+
+        Parameters
+        ----------
+        checkpoint_path : str
+            Path to the checkpoint file to load.
+
+        Returns
+        -------
+        dict
+            Dictionary containing epoch and best_metric information.
+        """
+        checkpoint = torch.load(checkpoint_path, map_location=self.device)
+
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+        # Load scheduler state if it exists and scheduler is configured
+        if self.scheduler and "scheduler_state_dict" in checkpoint:
+            self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+
+        logging.info(f"Checkpoint loaded from {checkpoint_path}")
+        logging.info(f"Resuming from epoch {checkpoint['epoch'] + 1}")
+
+        return {"epoch": checkpoint["epoch"], "best_metric": checkpoint["best_metric"]}

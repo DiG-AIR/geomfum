@@ -1,4 +1,4 @@
-import geomstats.backend as gs
+import gsops.backend as gs
 import meshio
 
 

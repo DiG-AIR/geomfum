@@ -31,7 +31,7 @@ dependencies = [
     "meshio",
     "pyfmaps",
     "torch",
-    "geomstats",
+    "gsops",
 ]
 
 [project.optional-dependencies]

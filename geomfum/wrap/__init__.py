@@ -11,6 +11,7 @@ from geomfum._registry import (
     register_laplacian_finder,
     register_mesh_plotter,
     register_neighbor_finder,
+    register_point_cloud_plotter,
     register_poisson_sampler,
     register_wave_kernel_signature,
 )
@@ -34,9 +35,6 @@ register_laplacian_finder(
 
 register_laplacian_finder(True, "igl", "IglMeshLaplacianFinder", requires="igl")
 
-register_laplacian_finder(
-    True, "geopext", "GeopextMeshLaplacianFinder", requires="geopext"
-)
 
 register_laplacian_finder(
     False, "robust", "RobustPointCloudLaplacianFinder", requires="robust_laplacian"
@@ -86,6 +84,19 @@ register_mesh_plotter(
     "polyscope", "PsMeshPlotter", requires="polyscope", as_default=False
 )
 
+register_point_cloud_plotter(
+    "plotly", "PlotlyPointCloudPlotter", requires="plotly", as_default=True
+)
+
+register_point_cloud_plotter(
+    "pyvista", "PvPointCloudPlotter", requires="pyvista", as_default=False
+)
+
+register_point_cloud_plotter(
+    "polyscope", "PsPointCloudPlotter", requires="polyscope", as_default=False
+)
+
+
 register_feature_extractor(
     "pointnet", "PointnetFeatureExtractor", requires="torch", as_default=False
 )
@@ -104,6 +115,16 @@ register_feature_extractor(
 register_neighbor_finder(
     "pot", "PotSinkhornNeighborFinder", requires="ot", as_default=True
 )
+
+
 register_heat_distance_metric(
-    "pp3d", "Pp3dHeatDistanceMetric", requires="potpourri3d", as_default=True
+    True, "pp3d", "Pp3dMeshHeatDistanceMetric", requires="potpourri3d", as_default=True
+)
+
+register_heat_distance_metric(
+    False,
+    "pp3d",
+    "Pp3dPointSetHeatDistanceMetric",
+    requires="potpourri3d",
+    as_default=True,
 )

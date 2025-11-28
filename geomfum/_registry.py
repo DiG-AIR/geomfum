@@ -350,8 +350,25 @@ class MeshPlotterRegistry(Registry):
     MAP = {}
 
 
-class HeatDistanceMetricRegistry(Registry):
+class PointCloudPlotterRegistry(Registry):
     MAP = {}
+
+
+class _MeshHeatDistanceMetricRegistry(Registry):
+    has_internal = False
+    MAP = {}
+
+
+class _PointSetHeatDistanceMetricRegistry(Registry):
+    has_internal = False
+    MAP = {}
+
+
+class HeatDistanceMetricRegistry(NestedRegistry):
+    Registries = {
+        True: _MeshHeatDistanceMetricRegistry,
+        False: _PointSetHeatDistanceMetricRegistry,
+    }
 
 
 def _create_register_funcs(module):

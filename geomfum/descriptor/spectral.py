@@ -2,9 +2,7 @@
 
 import abc
 
-import geomstats.backend as gs
-
-import geomfum.backend as xgs
+import gsops.backend as gs
 import geomfum.linalg as la
 from geomfum._registry import (
     HeatKernelSignatureRegistry,
@@ -34,8 +32,8 @@ def hks_default_domain(shape, n_domain):
     """
     nonzero_vals = shape.basis.nonzero_vals
     device = getattr(nonzero_vals, "device", None)
-    return xgs.to_device(
-        xgs.geomspace(
+    return gs.to_device(
+        gs.geomspace(
             4 * gs.log(10) / nonzero_vals[-1],
             4 * gs.log(10) / nonzero_vals[0],
             n_domain,
@@ -93,7 +91,7 @@ class WksDefaultDomain:
         e_min += self.n_trans * sigma
         e_max -= self.n_trans * sigma
 
-        energy = xgs.to_device(gs.linspace(e_min, e_max, self.n_domain), device)
+        energy = gs.to_device(gs.linspace(e_min, e_max, self.n_domain), device)
 
         return energy, sigma
 
@@ -182,12 +180,12 @@ class WaveKernelFilter(SpectralFilter):
             Filter coefficients.
         """
         nonzero_vals = vals[gs.sum(gs.isclose(vals, 0.0)) :]
-        zeros = xgs.to_device(
+        zeros = gs.to_device(
             gs.zeros((domain.shape[0], vals.shape[0] - nonzero_vals.shape[0])),
             device=getattr(nonzero_vals, "device", None),
         )
-        exp_arg = -xgs.square(gs.log(nonzero_vals) - domain[:, None]) / (
-            2 * xgs.square(sigma)
+        exp_arg = -gs.square(gs.log(nonzero_vals) - domain[:, None]) / (
+            2 * gs.square(sigma)
         )
         coefs = gs.exp(exp_arg)
 
@@ -323,6 +321,6 @@ class LandmarkWaveKernelSignature(WhichRegistryMixins, SpectralDescriptor):
             domain=domain or WksDefaultDomain(n_domain=n_domain, sigma=sigma),
             scale=scale,
             sigma=sigma,
-            landmarks=True,
             k=k,
+            landmarks=True,
         )

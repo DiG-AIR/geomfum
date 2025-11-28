@@ -2,7 +2,7 @@
 
 import abc
 
-import geomstats.backend as gs
+import gsops.backend as gs
 
 import geomfum.linalg as la
 

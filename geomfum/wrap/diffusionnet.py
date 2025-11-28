@@ -11,12 +11,12 @@ https://arxiv.org/abs/2012.00888
 
 """
 
+import gsops.backend as gs
 import torch
 import torch.nn as nn
 
-import geomfum.backend as xgs
-import geomfum.backend as xgs
 from geomfum.descriptor.learned import BaseFeatureExtractor
+from geomfum.shape import TriangleMesh
 
 
 # TODO: Implement betching operations. for now diffusionnet accept just one mesh as input
@@ -127,15 +127,18 @@ class DiffusionnetFeatureExtractor(BaseFeatureExtractor, nn.Module):
             Extracted feature tensor of shape [1, V, out_channels].
         """
         # Support both Shape and dict
-        v = xgs.to_torch(shape.vertices).float().to(self.device)
-        f = xgs.to_torch(shape.faces).int().to(self.device)
-
+        v = gs.to_torch(shape.vertices).float().to(self.device)
+        if isinstance(shape, TriangleMesh):
+            f = gs.to_torch(shape.faces).int().to(self.device)
+            f = f.unsqueeze(0).to(torch.float32)
+        else:
+            f = None
         # Compute spectral operators
         frames, mass, L, evals, evecs, gradX, gradY = self._get_operators(
             shape, k=self.k
         )
         v = v.unsqueeze(0).to(torch.float32)
-        f = f.unsqueeze(0).to(torch.float32)
+
         frames = frames.unsqueeze(0).to(torch.float32)
         mass = mass.unsqueeze(0).to(torch.float32)
         L = L.unsqueeze(0).to(torch.float32)
@@ -148,7 +151,7 @@ class DiffusionnetFeatureExtractor(BaseFeatureExtractor, nn.Module):
             input_feat = None
         else:
             input_feat = self.descriptor(shape)
-            input_feat = xgs.to_torch(input_feat).to(torch.float32).to(self.device)
+            input_feat = gs.to_torch(input_feat).to(torch.float32).to(self.device)
             input_feat = input_feat.unsqueeze(0).transpose(2, 1)
 
             if input_feat.shape[-1] != self.in_channels:
@@ -187,29 +190,27 @@ class DiffusionnetFeatureExtractor(BaseFeatureExtractor, nn.Module):
         gradY : torch.SparseTensor
             Imaginary part of gradient matrix [..., n_vertices, n_vertices].
         """
-        assert k > 0, (
-            f"Number of eigenvalues/vectors should be positive, bug get {k}"
-        )
+        assert k > 0, f"Number of eigenvalues/vectors should be positive, bug get {k}"
 
         frames = mesh.vertex_tangent_frames
         L, M = mesh.laplacian.find()
         evals, evecs = mesh.laplacian.find_spectrum(spectrum_size=k)
-        grad = mesh.gradient_matrix
-        grad_scipy = xgs.sparse.to_scipy_csc(grad)
-        frames = xgs.to_torch(frames)
-        massvec = torch.tensor(xgs.sparse.to_scipy_csc(M).diagonal()).to(
+        grad = mesh.gradient.gradient_matrix
+        grad_scipy = gs.sparse.to_scipy_csc(grad)
+        frames = gs.to_torch(frames)
+        massvec = torch.tensor(gs.sparse.to_scipy_csc(M).diagonal()).to(
             device=self.device, dtype=torch.float32
         )
-        L = xgs.sparse.to_torch_coo(xgs.sparse.to_coo(L)).to(
+        L = gs.sparse.to_torch_coo(gs.sparse.to_coo(L)).to(
             device=self.device, dtype=torch.float32
         )
-        evals = xgs.to_torch(evals).to(device=self.device, dtype=torch.float32)
-        evecs = xgs.to_torch(evecs).to(device=self.device, dtype=torch.float32)
-        gradX = xgs.sparse.to_torch_coo(
-            xgs.sparse.to_coo(xgs.sparse.from_scipy_csc(grad_scipy.real))
+        evals = gs.to_torch(evals).to(device=self.device, dtype=torch.float32)
+        evecs = gs.to_torch(evecs).to(device=self.device, dtype=torch.float32)
+        gradX = gs.sparse.to_torch_coo(
+            gs.sparse.to_coo(gs.sparse.from_scipy_csc(grad_scipy.real))
         ).to(device=self.device, dtype=torch.float32)
-        gradY = xgs.sparse.to_torch_coo(
-            xgs.sparse.to_coo(xgs.sparse.from_scipy_csc(grad_scipy.imag))
+        gradY = gs.sparse.to_torch_coo(
+            gs.sparse.to_coo(gs.sparse.from_scipy_csc(grad_scipy.imag))
         ).to(device=self.device, dtype=torch.float32)
         return frames, massvec, L, evals, evecs, gradX, gradY
 

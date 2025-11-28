@@ -3,10 +3,9 @@
 import abc
 import logging
 
-import geomstats.backend as gs
+import gsops.backend as gs
 import scipy
 
-import geomfum.backend as xgs
 from geomfum.convert import (
     FmFromP2pBijectiveConverter,
     FmFromP2pConverter,
@@ -108,7 +107,7 @@ class OrthogonalRefiner(Refiner):
 
         opt_rot = gs.asarray(gs.matmul(U, VT))
         if gs.linalg.det(opt_rot) < 0.0:
-            diag_sign = xgs.diag(gs.ones(VT.shape[0]))
+            diag_sign = gs.diag(gs.ones(VT.shape[0]))
             diag_sign[-1, -1] = -1
             opt_rot = gs.matmul(U, gs.matmul(diag_sign, VT))
 

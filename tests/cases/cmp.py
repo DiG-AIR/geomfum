@@ -1,8 +1,7 @@
+import gsops.backend as gs
 import numpy as np
 import pytest
 from geomstats.test.test_case import TestCase
-
-import geomfum.backend as xgs
 
 
 class LaplacianFinderCmpCase(TestCase):
@@ -24,13 +23,13 @@ class LaplacianFinderCmpCase(TestCase):
         laplacian_matrix_, mass_matrix_ = self.finder_b(other_shape)
 
         self.assertAllClose(
-            xgs.sparse.to_dense(laplacian_matrix),
-            xgs.sparse.to_dense(laplacian_matrix_),
+            gs.sparse.to_dense(laplacian_matrix),
+            gs.sparse.to_dense(laplacian_matrix_),
             atol=atol,
         )
         self.assertAllClose(
-            xgs.sparse.to_dense(mass_matrix),
-            xgs.sparse.to_dense(mass_matrix_),
+            gs.sparse.to_dense(mass_matrix),
+            gs.sparse.to_dense(mass_matrix_),
             atol=atol,
         )
 

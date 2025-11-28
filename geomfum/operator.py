@@ -2,6 +2,8 @@
 
 import abc
 
+import gsops.backend as gs
+
 from geomfum._registry import (
     FaceDivergenceOperatorRegistry,
     FaceOrientationOperatorRegistry,
@@ -9,10 +11,10 @@ from geomfum._registry import (
     WhichRegistryMixins,
 )
 from geomfum.laplacian import LaplacianFinder, LaplacianSpectrumFinder
+from geomfum.shape.shape_utils import compute_gradient_matrix_fem
+
 
 # TODO: remove functional; simply use operator
-
-
 class FunctionalOperator(abc.ABC):
     """Functional operator."""
 
@@ -215,6 +217,59 @@ class FaceValuedGradient(WhichRegistryMixins, FunctionalOperator):
     """
 
     _Registry = FaceValuedGradientRegistry
+
+
+class Gradient(FunctionalOperator):
+    """Gradient of a function f on a shape defined on the points.
+
+    Parameters
+    ----------
+    gradient_matrix : array-like, shape=[n_vertices, n_vertices]
+        Gradient matrix.
+    """
+
+    def __init__(self, shape, gradient_matrix=None):
+        super().__init__(shape)
+        self._gradient_matrix = gradient_matrix
+
+    @property
+    def gradient_matrix(self):
+        """Compute the gradient operator as a complex sparse matrix.
+
+        This code locally fits a linear function to the scalar values at each vertex and its neighbors, extracts the gradient in the tangent plane, and assembles the global sparse matrix that acts as the discrete gradient operator on the mesh.
+
+        Returns
+        -------
+        grad_op : complex gs.sparse.csc_matrix, shape=[n_vertices, n_vertices]
+            Complex sparse matrix representing the gradient operator.
+            The real part corresponds to the X component in the local tangent frame,
+            and the imaginary part corresponds to the Y component.
+        """
+        if self._gradient_matrix is None:
+            self._gradient_matrix = compute_gradient_matrix_fem(
+                self._shape.vertices,
+                self._shape.edges,
+                self._shape.edge_tangent_vectors,
+            )
+
+        return self._gradient_matrix
+
+    def __call__(self, point):
+        """Apply operator.
+
+        Parameters
+        ----------
+        point : array-like, shape=[..., n_vertices]
+
+        Returns
+        -------
+        feat_grad : array-like, shape=[..., n_vertices, 2]
+            Gradient of the function at the vertices, where the last dimension
+            contains the X and Y components in the local tangent frame.
+        """
+        feat_gradX = self.gradient_matrix.real @ point
+        feat_gradY = self.gradient_matrix.imag @ point
+        return gs.stack((feat_gradX, feat_gradY), -1)
 
 
 class FaceDivergenceOperator(WhichRegistryMixins, VectorFieldOperator):

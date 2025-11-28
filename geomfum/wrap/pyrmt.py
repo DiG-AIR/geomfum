@@ -1,6 +1,6 @@
 """pyRMT wrapper."""
 
-import geomstats.backend as gs
+import gsops.backend as gs
 import numpy as np
 from PyRMT import RMTMesh
 

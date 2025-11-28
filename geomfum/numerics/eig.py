@@ -1,7 +1,5 @@
-import geomstats.backend as gs
+import gsops.backend as gs
 import scipy
-
-import geomfum.backend as xgs
 
 
 class ScipyEigsh:
@@ -17,9 +15,9 @@ class ScipyEigsh:
 
     def __call__(self, A, M=None):
         vals, vecs = scipy.sparse.linalg.eigsh(
-            xgs.sparse.to_scipy_csc(A),
+            gs.sparse.to_scipy_csc(A),
             k=self.spectrum_size,
-            M=xgs.sparse.to_scipy_dia(M),
+            M=gs.sparse.to_scipy_dia(M),
             sigma=self.sigma,
             which=self.which,
         )

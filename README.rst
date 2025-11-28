@@ -17,6 +17,13 @@ Or directly from the GitHub repository
     
     pip install geomfum@git+https://github.com/3diglab/geomfum.git@main
 
+Or
+
+::
+    
+    pip install geomfum 
+    pip install geomstats@git+https://github.com/geomstats/geomstats.git@main
+
 
 Or the classic pipeline: ``clone + pip install``.
 
@@ -77,8 +84,7 @@ and in the Python3 code:
 
 ::
 
-    import geomstats.backend as gs
-    import geomfum.backend as xgs
+    import gsops.backend as gs
 
 Contributions
 -------------
@@ -97,7 +103,7 @@ Please follow our `contribution guidelines <https://dig-air.github.io/geomfum.gi
 
 Community
 ---------
-Join our Discord Server! https://discord.gg/6sYmEbUp
+Join our Discord Server! https://discord.gg/THHku2ckJs
 
 
 List of Implemented Papers
@@ -120,9 +126,11 @@ List of Implemented Papers
 
 Acknowledgement
 ---------------
-We thank the geometry processing and functional maps community for their foundational research and ongoing contributions that inspired this work.
-This work was partially supported by the European Union (Next Generation EU), MUR (REGAINS), NVIDIA Academic Hardware Grant, and the NSF (MRSEC and CAREER awards). 
+We thank the geometry processing and functional maps community for their foundational research and ongoing contributions that inspired this work, particularly open-source libraries on functional maps such as pyFM (RobinMagnet), FMNet (pvnieo), and Unsupervised-Learning-of-Robust-Spectral-Shape-Matching (dongliangcao), which provided valuable implementations and examples. We tried our best, referencing all relevant works in the library to give credit to researchers and developers; however, we acknowledge that we could have missed some! Please contact us and propose a change if you want recognition and think something is missing!
 
+If you use Geomfum, please cite the `Software <https://doi.org/10.5281/zenodo.17194577>`_ to give recognition to any contributor of the project.
+
+This work was partially supported by the European Union (Next Generation EU), MUR (REGAINS), NVIDIA Academic Hardware Grant, and the NSF (MRSEC and CAREER awards). 
 
 
 **Have FuM!**

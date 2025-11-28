@@ -8,11 +8,11 @@ References
     https://github.com/riccardomarin/Diff-FMaps by Riccardo Marin
 """
 
+import gsops.backend as gs
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import geomfum.backend as xgs
 from geomfum.descriptor.learned import BaseFeatureExtractor
 
 
@@ -86,7 +86,7 @@ class PointnetFeatureExtractor(BaseFeatureExtractor, nn.Module):
         else:
             input_feat = self.descriptor(shape)
 
-        input_feat = xgs.to_torch(input_feat).to(self.device).float()
+        input_feat = gs.to_torch(input_feat).to(self.device).float()
         input_feat = input_feat.unsqueeze(0).contiguous()
 
         if input_feat.shape[1] != self.in_channels:

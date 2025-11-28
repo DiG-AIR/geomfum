@@ -1,8 +1,8 @@
 """igl wrapper."""
 
+import gsops.backend as gs
 import igl
 
-import geomfum.backend as xgs
 from geomfum.laplacian import BaseLaplacianFinder
 
 
@@ -25,8 +25,8 @@ class IglMeshLaplacianFinder(BaseLaplacianFinder):
             Diagonal lumped mass matrix.
         """
         return (
-            xgs.sparse.from_scipy_csc(-igl.cotmatrix(shape.vertices, shape.faces)),
-            xgs.sparse.from_scipy_csc(
+            gs.sparse.from_scipy_csc(-igl.cotmatrix(shape.vertices, shape.faces)),
+            gs.sparse.from_scipy_csc(
                 igl.massmatrix(shape.vertices, shape.faces, igl.MASSMATRIX_TYPE_VORONOI)
             ),
         )

@@ -2,9 +2,8 @@
 
 import abc
 
-import geomstats.backend as gs
+import gsops.backend as gs
 
-import geomfum.backend as xgs
 import geomfum.wrap as _wrap  # noqa (for register)
 from geomfum._registry import LaplacianFinderRegistry, MeshWhichRegistryMixins
 from geomfum.basis import LaplaceEigenBasis
@@ -80,14 +79,14 @@ class LaplacianFinder(MeshWhichRegistryMixins, BaseLaplacianFinder):
         col = gs.concatenate([vind120, vind012, vind012, vind120])
         data = gs.concatenate([-cot_angles, -cot_angles, cot_angles, cot_angles])
 
-        stiffness_matrix = xgs.sparse.csc_matrix(
+        stiffness_matrix = gs.sparse.csc_matrix(
             gs.stack([row, col]),
             data,
             shape=(shape.n_vertices, shape.n_vertices),
             coalesce=True,
         )
 
-        mass_matrix = xgs.sparse.dia_matrix(shape.vertex_areas)
+        mass_matrix = gs.sparse.dia_matrix(shape.vertex_areas)
         return stiffness_matrix, mass_matrix
 
 

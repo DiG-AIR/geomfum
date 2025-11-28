@@ -4,6 +4,6 @@ except ImportError:
     pass
 
 try:
-    from ._plotly import to_go_mesh3d  # noqa:F401
+    from ._plotly import to_go_mesh3d, to_go_pointcloud  # noqa:F401
 except ImportError:
     pass

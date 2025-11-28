@@ -5,29 +5,33 @@ import os
 import random
 import warnings
 
-import geomstats.backend as gs
+import gsops.backend as gs
 import meshio
 import numpy as np
 import scipy
 import torch
 from torch.utils.data import Dataset
 
-import geomfum.backend as xgs
+from geomfum.metric import VertexEuclideanMetric
 from geomfum.metric.mesh import ScipyGraphShortestPathMetric
-from geomfum.shape.mesh import TriangleMesh
+from geomfum.shape import PointCloud, TriangleMesh
 
 
 class ShapeDataset(Dataset):
-    """ShapeDataset for loading and preprocessing shape data.
+    """General dataset for loading and preprocessing meshes or point clouds.
 
     Parameters
     ----------
     dataset_dir : str
-        Path to the directory containing the dataset. We assume the dataset directory to have a subfolder shapes, for shapes, corr, for correspondences and dist, for chaced distance matrices.
+        Path to the directory containing the dataset. We assume the dataset directory to have a subfolder shapes, for shapes, corr, for correspondences and dist, for cached distance matrices.
+    shape_type : str
+        Type of shape to load. Either 'mesh' or 'pointcloud'.
     spectral : bool
         Whether to compute the spectral features.
     distances : bool
         Whether to compute geodesic distance matrices. For computational reasons, these are not computed on the fly, but rather loaded from a precomputed .mat file.
+    correspondences : bool
+        Whether to load correspondences.
     k : int
         Number of eigenvectors to use for the spectral features.
     device : torch.device, optional
@@ -37,13 +41,18 @@ class ShapeDataset(Dataset):
     def __init__(
         self,
         dataset_dir,
+        shape_type="mesh",
         spectral=False,
         distances=False,
         correspondences=True,
         k=200,
         device=None,
     ):
+        if shape_type not in ["mesh", "pointcloud"]:
+            raise ValueError("shape_type must be either 'mesh' or 'pointcloud'")
+
         self.dataset_dir = dataset_dir
+        self.shape_type = shape_type
         self.shape_dir = os.path.join(dataset_dir, "shapes")
         all_shape_files = sorted(
             [
@@ -64,22 +73,32 @@ class ShapeDataset(Dataset):
         self.k = k
         self.distances = distances
         self.correspondences = correspondences
-        # Preload meshes (or their important features) into memory
-        self.meshes = {}
+
+        # Preload shapes (or their important features) into memory
+        self.shapes = {}
         self.corrs = {}
+
         for filename in self.shape_files:
             ext = os.path.splitext(filename)[1][1:]
             if ext not in meshio._helpers._writer_map:
                 warnings.warn(f"Skipped unsupported mesh file: {filename}")
                 continue
+
             filepath = os.path.join(self.shape_dir, filename)
-            mesh = TriangleMesh.from_file(filepath)
+
+            # Load shape based on type
+            if self.shape_type == "mesh":
+                shape = TriangleMesh.from_file(filepath)
+            else:  # pointcloud
+                shape = PointCloud.from_file(filepath)
+
             base_name, _ = os.path.splitext(filename)
+
             # preprocess
             if spectral:
-                mesh.laplacian.find_spectrum(spectrum_size=k, set_as_basis=True)
+                shape.laplacian.find_spectrum(spectrum_size=k, set_as_basis=True)
 
-            self.meshes[filename] = mesh
+            self.shapes[filename] = shape
 
             corr_filename = base_name + ".vts"
             if self.correspondences:
@@ -94,7 +113,7 @@ class ShapeDataset(Dataset):
                         - 1
                     )
                 else:
-                    self.corrs[filename] = np.arange(mesh.vertices.shape[0])
+                    self.corrs[filename] = np.arange(shape.vertices.shape[0])
 
     def __getitem__(self, idx):
         """Retrieve a data sample by index.
@@ -104,15 +123,13 @@ class ShapeDataset(Dataset):
         idx : int
             Index of the item to retrieve.
 
-
         Returns
         -------
         shape_data: dict
             Dictionary containing the shape, the correspondence and the distances if available and required.
-
         """
         filename = self.shape_files[idx]
-        mesh = self.meshes[filename]
+        shape = self.shapes[filename]
 
         shape_data = {}
 
@@ -130,7 +147,10 @@ class ShapeDataset(Dataset):
                 if "D" in mat_contents:
                     geod_distance_matrix = mat_contents["D"]
             if geod_distance_matrix is None:
-                metric = ScipyGraphShortestPathMetric(mesh)
+                if self.shape_type == "mesh":
+                    metric = ScipyGraphShortestPathMetric(shape)
+                else:  # pointcloud
+                    metric = VertexEuclideanMetric(shape)
                 geod_distance_matrix = metric.dist_matrix()
                 os.makedirs(os.path.dirname(dist_path), exist_ok=True)
                 scipy.io.savemat(
@@ -140,21 +160,72 @@ class ShapeDataset(Dataset):
 
             shape_data.update({"dist_matrix": gs.array(geod_distance_matrix)})
 
-        mesh.vertices = xgs.to_device(mesh.vertices, self.device)
-        mesh.faces = xgs.to_device(mesh.faces, self.device)
-        mesh.basis.full_vals = xgs.to_device(mesh.basis.full_vals, self.device)
-        mesh.basis.full_vecs = xgs.to_device(mesh.basis.full_vecs, self.device)
-        mesh.laplacian._mass_matrix = xgs.to_device(
-            mesh.laplacian._mass_matrix, self.device
+        # Move shape data to device
+        shape.vertices = gs.to_device(shape.vertices, self.device)
+        shape.basis.full_vals = gs.to_device(shape.basis.full_vals, self.device)
+        shape.basis.full_vecs = gs.to_device(shape.basis.full_vecs, self.device)
+        shape.laplacian._mass_matrix = gs.to_device(
+            shape.laplacian._mass_matrix, self.device
         )
 
-        shape_data.update({"mesh": mesh})
+        # Only move faces to device for meshes
+        if self.shape_type == "mesh":
+            shape.faces = gs.to_device(shape.faces, self.device)
+
+        shape_data.update({"shape": shape})
 
         return shape_data
 
     def __len__(self):
         """Get the length of the dataset."""
         return len(self.shape_files)
+
+
+# Convenience classes for backward compatibility
+class MeshDataset(ShapeDataset):
+    """ShapeDataset for loading and preprocessing mesh data."""
+
+    def __init__(
+        self,
+        dataset_dir,
+        spectral=False,
+        distances=False,
+        correspondences=True,
+        k=200,
+        device=None,
+    ):
+        super().__init__(
+            dataset_dir=dataset_dir,
+            shape_type="mesh",
+            spectral=spectral,
+            distances=distances,
+            correspondences=correspondences,
+            k=k,
+            device=device,
+        )
+
+
+class PointCloudDataset(ShapeDataset):
+    """ShapeDataset for loading and preprocessing point cloud data."""
+
+    def __init__(
+        self,
+        dataset_dir,
+        spectral=False,
+        distances=False,
+        correspondences=True,
+        k=200,
+        device=None,
+    ):
+        super().__init__(
+            dataset_dir=dataset_dir,
+            shape_type="pointcloud",
+            spectral=spectral,
+            distances=distances,
+            correspondences=correspondences,
+            k=k,
+            device=device,
+        )
 
 
 class PairsDataset(Dataset):

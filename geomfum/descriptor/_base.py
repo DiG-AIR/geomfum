@@ -1,8 +1,7 @@
 import abc
 
-import geomstats.backend as gs
+import gsops.backend as gs
 
-import geomfum.backend as xgs
 import geomfum.linalg as la
 
 
@@ -92,7 +91,7 @@ class SpectralDescriptor(Descriptor, abc.ABC):
         -------
         descriptors : array-like, shape=[n_domain, n_vertices]
         """
-        vecs_term = xgs.square(vecs)
+        vecs_term = gs.square(vecs)
         if self.scale:
             coefs = la.scale_to_unit_sum(coefs)
         return gs.einsum("...j,ij->...i", coefs, vecs_term)

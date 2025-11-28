@@ -1,6 +1,6 @@
 """Linear algebra utils."""
 
-import geomstats.backend as gs
+import gsops.backend as gs
 
 
 def _prefix_with_ellipsis(string):

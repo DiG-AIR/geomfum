@@ -1,13 +1,11 @@
 """pyFM wrapper."""
 
-import geomstats.backend as gs
+import gsops.backend as gs
 import numpy as np
 import pyFM.mesh
 import pyFM.mesh.geometry
 import pyFM.signatures
-import scipy
 
-import geomfum.backend as xgs
 from geomfum.descriptor._base import SpectralDescriptor
 from geomfum.descriptor.spectral import WksDefaultDomain, hks_default_domain
 from geomfum.laplacian import BaseLaplacianFinder
@@ -34,10 +32,10 @@ class PyfmMeshLaplacianFinder(BaseLaplacianFinder):
             Diagonal lumped mass matrix.
         """
         return (
-            xgs.sparse.from_scipy_csc(
+            gs.sparse.from_scipy_csc(
                 pyFM.mesh.laplacian.cotangent_weights(shape.vertices, shape.faces)
             ),
-            xgs.sparse.from_scipy_dia(
+            gs.sparse.from_scipy_dia(
                 pyFM.mesh.laplacian.dia_area_mat(shape.vertices, shape.faces)
             ),
         )
@@ -59,7 +57,8 @@ class PyfmHeatKernelSignature(SpectralDescriptor):
 
     def __init__(self, scale=True, n_domain=3, domain=None):
         super().__init__(
-            domain=domain or (lambda shape: hks_default_domain(shape, n_domain=n_domain)),
+            domain=domain
+            or (lambda shape: hks_default_domain(shape, n_domain=n_domain)),
         )
         self.scale = scale
 
@@ -76,7 +75,9 @@ class PyfmHeatKernelSignature(SpectralDescriptor):
         descr : array-like, shape=[n_domain, n_vertices]
             Descriptor.
         """
-        domain,_ = self.domain(shape) if callable(self.domain) else (self.domain, self.sigma)
+        domain, _ = (
+            self.domain(shape) if callable(self.domain) else (self.domain, self.sigma)
+        )
 
         return gs.from_numpy(
             pyFM.signatures.HKS(
@@ -101,7 +102,8 @@ class PyfmLandmarkHeatKernelSignature(SpectralDescriptor):
 
     def __init__(self, scale=True, n_domain=3, domain=None):
         super().__init__(
-            domain = domain or (lambda shape: hks_default_domain(shape, n_domain=n_domain)),
+            domain=domain
+            or (lambda shape: hks_default_domain(shape, n_domain=n_domain)),
         )
         self.scale = scale
 
@@ -123,7 +125,9 @@ class PyfmLandmarkHeatKernelSignature(SpectralDescriptor):
                 "Shape must have 'landmark_indices' set for LandmarkHeatKernelSignature."
             )
 
-        domain, _ = self.domain(shape) if callable(self.domain) else (self.domain, self.sigma)
+        domain, _ = (
+            self.domain(shape) if callable(self.domain) else (self.domain, self.sigma)
+        )
 
         return gs.from_numpy(
             pyFM.signatures.lm_HKS(
@@ -153,11 +157,16 @@ class PyfmWaveKernelSignature(SpectralDescriptor):
         domain points.
     """
 
-    def __init__(self, scale=True, sigma=None, n_domain=3, domain=None, landmarks=False):
+    def __init__(
+        self, scale=True, sigma=None, n_domain=3, domain=None, landmarks=False
+    ):
         super().__init__(
-            domain=domain or WksDefaultDomain(n_domain=n_domain, sigma=sigma),scale=scale,
-            landmarks=landmarks, sigma=sigma
+            domain=domain or WksDefaultDomain(n_domain=n_domain, sigma=sigma),
+            scale=scale,
+            landmarks=landmarks,
+            sigma=sigma,
         )
+
     def __call__(self, shape):
         """Compute descriptor.
 
@@ -171,7 +180,6 @@ class PyfmWaveKernelSignature(SpectralDescriptor):
         descr : array-like, shape=[{n_domain, n_landmarks*n_domain}, n_vertices]
             Descriptor.
         """
-
         if callable(self.domain):
             domain, sigma = self.domain(shape)
         else:
@@ -202,7 +210,7 @@ class PyfmLandmarkWaveKernelSignature(SpectralDescriptor):
 
     def __init__(self, scale=True, sigma=None, n_domain=3, domain=None):
         super().__init__(
-            domain = domain or WksDefaultDomain(n_domain=n_domain, sigma=sigma),
+            domain=domain or WksDefaultDomain(n_domain=n_domain, sigma=sigma),
         )
         self.scale = scale
         self.sigma = sigma
@@ -214,7 +222,9 @@ class PyfmLandmarkWaveKernelSignature(SpectralDescriptor):
                 "Shape must have 'landmark_indices' set for LandmarkHeatKernelSignature."
             )
 
-        domain, sigma = self.domain(shape) if callable(self.domain) else (self.domain, self.sigma)
+        domain, sigma = (
+            self.domain(shape) if callable(self.domain) else (self.domain, self.sigma)
+        )
         return pyFM.signatures.lm_WKS(
             shape.basis.vals,
             shape.basis.vecs,
@@ -331,7 +341,7 @@ def get_orientation_op(
     In practice, we compute < n x grad(f), grad(g) > for simpler computation.
 
     Parameters
-    --------------------------------
+    ----------
     grad_field    :
         (n_f,3) gradient field on the mesh
     vertices      :
@@ -346,7 +356,7 @@ def get_orientation_op(
         whether gradient field is already rotated by n x grad(f)
 
     Returns
-    --------------------------
+    -------
     operator : sparse.csc_matrix or list[sparse.csc_matrix], shape=[n_vertices, n_verticess]
         (n_v,n_v) orientation operator.
 
@@ -408,11 +418,11 @@ def get_orientation_op(
     Jn = gs.concatenate([J, I, I, J])
     Sn = gs.concatenate([Sij, Sji, -Sij, -Sji], axis=-1)
 
-    inv_area = xgs.sparse.dia_matrix(1 / per_vert_area, shape=(n_vertices, n_vertices))
+    inv_area = gs.sparse.dia_matrix(1 / per_vert_area, shape=(n_vertices, n_vertices))
 
     indices = gs.stack([In, Jn])
     if Sn.ndim == 1:
-        W = xgs.sparse.csc_matrix(
+        W = gs.sparse.csc_matrix(
             indices, Sn, shape=(n_vertices, n_vertices), coalesce=True
         )
 
@@ -420,7 +430,7 @@ def get_orientation_op(
 
     out = []
     for Sn_ in Sn:
-        W = xgs.sparse.csc_matrix(
+        W = gs.sparse.csc_matrix(
             indices, Sn_, shape=(n_vertices, n_vertices), coalesce=True
         )
         out.append(inv_area @ W)

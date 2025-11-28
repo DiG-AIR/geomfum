@@ -13,9 +13,8 @@ from typing import Optional
 
 import torch
 import torch.nn as nn
-
-import geomfum.backend as xgs
 from geomfum.descriptor.learned import BaseFeatureExtractor
+import gsops.backend as gs
 
 
 class TransformerFeatureExtractor(BaseFeatureExtractor, nn.Module):
@@ -83,7 +82,7 @@ class TransformerFeatureExtractor(BaseFeatureExtractor, nn.Module):
                 embed_dim=embed_dim,
                 num_heads=num_heads,
                 num_layers=num_layers,
-                dropout=dropout
+                dropout=dropout,
             )
             .to(self.device)
             .float()
@@ -111,8 +110,8 @@ class TransformerFeatureExtractor(BaseFeatureExtractor, nn.Module):
         else:
             input_feat = self.descriptor(shape).T
 
-        xyz = xgs.to_torch(input_feat).to(self.device).float().unsqueeze(0)
-        input_feat = xgs.to_torch(input_feat).to(self.device).float()
+        xyz = gs.to_torch(input_feat).to(self.device).float().unsqueeze(0)
+        input_feat = gs.to_torch(input_feat).to(self.device).float()
         input_feat = input_feat.unsqueeze(0)
         # Project input features
         x = self.input_projection(input_feat)  # (B, N, embed_dim)
@@ -148,11 +147,7 @@ class MultiHeadAttention(torch.nn.Module):
     """
 
     def __init__(
-        self,
-        embed_dim,
-        num_heads: int,
-        dropout: float = 0.0,
-        bias: bool = True
+        self, embed_dim, num_heads: int, dropout: float = 0.0, bias: bool = True
     ):
         super(MultiHeadAttention, self).__init__()
         self.embed_dim = embed_dim
@@ -167,8 +162,8 @@ class MultiHeadAttention(torch.nn.Module):
         query: torch.Tensor,
         key: torch.Tensor,
         value: torch.Tensor,
-        attn_mask :torch.Tensor=None,
-        attn_prev :torch.Tensor=None,
+        attn_mask: torch.Tensor = None,
+        attn_prev: torch.Tensor = None,
     ):
         """Forward pass of the Multi-Head Attention layer.
 
@@ -276,9 +271,7 @@ class AttentionLayer(torch.nn.Module):
             torch.nn.Linear(embed_dim * ff_mult, embed_dim),
         )
 
-    def forward(
-        self, x, y, attn_mask=None, x_mask=None, y_mask=None, attn_prev=None
-    ):
+    def forward(self, x, y, attn_mask=None, x_mask=None, y_mask=None, attn_prev=None):
         """Forward pass of the Attention Layer.
 
         Parameters
