@@ -1,4 +1,4 @@
-"""Shape dataset for PyTorch."""
+"""Datasets for Loading Meshes and Point Clouds using PyTorch."""
 
 import itertools
 import os
@@ -230,7 +230,7 @@ class PointCloudDataset(ShapeDataset):
 
 class PairsDataset(Dataset):
     """
-    Dataset of pairs of shapes.
+    Dataset of pairs of shapes. Each item is a pair (source, target) of shapes from the provided dataset.
 
     Parameters
     ----------
@@ -265,11 +265,11 @@ class PairsDataset(Dataset):
             raise ValueError(f"Unsupported pair_mode: {pair_mode}")
 
     def generate_all_pairs(self):
-        """Generate all possible pairs of shapes."""
+        """Generate all possible pairs of shapes from the dataset."""
         return list(itertools.permutations(range(self.shape_data.__len__()), 2))
 
     def generate_random_pairs(self, pairs_ratio=0.5):
-        """Generate random pairs of shapes.
+        """Generate pairs of shapes considering random sampling from the dataset.
 
         Parameters
         ----------

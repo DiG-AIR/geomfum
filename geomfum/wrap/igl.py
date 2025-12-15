@@ -1,4 +1,4 @@
-"""igl wrapper."""
+"""Igl wrapper."""
 
 import gsops.backend as gs
 import igl

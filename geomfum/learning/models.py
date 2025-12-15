@@ -9,7 +9,6 @@ References
 import abc
 
 import gsops.backend as gs
-import gsops.backend as gs
 import torch.nn as nn
 
 from geomfum.convert import (

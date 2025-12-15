@@ -1,4 +1,4 @@
-"""Sampling methods."""
+"""Sampling methods. This module defines various sampling strategies for geometric shapes, including Poisson disk sampling and farthest point sampling to sample sets of point following geometric indications."""
 
 import abc
 import warnings
@@ -14,16 +14,18 @@ from geomfum._registry import (
 
 
 class BaseSampler(abc.ABC):
-    """Sampler."""
+    """Abstract Sampler."""
 
     @abc.abstractmethod
     def sample(self, shape):
         """Sample shape."""
 
+
 class PoissonSampler(WhichRegistryMixins):
     """Poisson disk sampling."""
 
     _Registry = PoissonSamplerRegistry
+
 
 class FarthestPointSampler(BaseSampler):
     """Farthest point sampling.
@@ -60,22 +62,28 @@ class FarthestPointSampler(BaseSampler):
             raise ValueError("d_func should be a callable")
         dist_func = shape.metric.dist_from_source
 
-        sub_points = np.arange(shape.n_vertices) if points_pool is None else np.array(points_pool)
+        sub_points = (
+            np.arange(shape.n_vertices)
+            if points_pool is None
+            else np.array(points_pool)
+        )
 
         if first_point is None:
             rng = np.random.default_rng()
             inds = [rng.choice(sub_points)]
         else:
             if first_point not in sub_points:
-                warnings.warn(f"First index {first_point} is not in the points pool {sub_points}.", UserWarning)
+                warnings.warn(
+                    f"First index {first_point} is not in the points pool {sub_points}.",
+                    UserWarning,
+                )
             sub_points = np.append(sub_points, first_point)
             inds = [first_point]
 
-
         dists = dist_func(inds[0])[0][sub_points]
 
-        for i in range(self.min_n_samples-1):
-            if i == self.min_n_samples-1:
+        for i in range(self.min_n_samples - 1):
+            if i == self.min_n_samples - 1:
                 continue
             new_subid = np.argmax(dists)
             newid = sub_points[new_subid]

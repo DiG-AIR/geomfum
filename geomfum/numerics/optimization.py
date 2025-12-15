@@ -9,7 +9,25 @@ from geomstats.numerics._common import result_to_backend_type
 
 # TODO: homogenize with geomstats
 class ScipyMinimize:
-    """Wrapper for scipy.optimize.minimize."""
+    """Backend-agnostic wrapper for SciPy's optimization routines.
+
+    Parameters
+    ----------
+    method : str, optional
+        Optimization algorithm (default: 'L-BFGS-B').
+    bounds : sequence, optional
+        Bounds on variables for constrained methods.
+    constraints : dict or sequence of dict, optional
+        Constraints definition.
+    tol : float, optional
+        Tolerance for termination.
+    callback : callable, optional
+        Function called after each iteration.
+    options : dict, optional
+        Solver-specific options.
+    save_result : bool, optional
+        Whether to save the optimization result (default: False).
+    """
 
     def __init__(
         self,

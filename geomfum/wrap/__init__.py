@@ -1,3 +1,5 @@
+"""Registration of various wrapped components in GeomFum."""
+
 from geomfum._registry import (
     register_face_divergence_operator,
     register_face_orientation_operator,

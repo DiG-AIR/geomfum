@@ -98,8 +98,8 @@ If you have suggestions, bug reports, or want to improve the code or documentati
 
 - Improve or add new examples/notebooks
 
+Please follow our `contribution guidelines <https://3diglab.github.io/geomfum.github.io/contributing.html>`_ and adhere to best practices for clean, modular, and well-documented code.
 
-Please follow our `contribution guidelines <https://dig-air.github.io/geomfum.github.io/contributing.html>`_ and adhere to best practices for clean, modular, and well-documented code.
 
 Community
 ---------

@@ -1,4 +1,4 @@
-"""Datasets for noteboos/docs."""
+"""Datasets for notebooks/docs."""
 
 import os
 

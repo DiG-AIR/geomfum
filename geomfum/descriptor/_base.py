@@ -1,3 +1,5 @@
+"""Base Descriptors Classes."""
+
 import abc
 
 import gsops.backend as gs
@@ -6,11 +8,11 @@ import geomfum.linalg as la
 
 
 class Descriptor(abc.ABC):
-    pass
+    """Abstract base class for shape descriptors."""
 
 
 class SpectralDescriptor(Descriptor, abc.ABC):
-    """Spectral descriptor.
+    """Spectral descriptor computed from Laplacian eigenfunctions with spectral filters.
 
     Parameters
     ----------
@@ -131,7 +133,7 @@ class SpectralDescriptor(Descriptor, abc.ABC):
 
 
 class DistanceFromLandmarksDescriptor(Descriptor):
-    """Distance from landmarks descriptor. A descriptor that returns the distance from landmarks as a function on the shape."""
+    """Descriptor computing geodesic distances from landmark points."""
 
     def __call__(self, shape):
         """Compute descriptor.

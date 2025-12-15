@@ -14,7 +14,7 @@ from geomfum.descriptor._base import Descriptor
 
 
 class BaseFeatureExtractor(abc.ABC):
-    """Base class for feature extractor."""
+    """Abstract base class for neural network feature extractors."""
 
     def __init__(self):
         super().__init__()
@@ -47,13 +47,13 @@ class BaseFeatureExtractor(abc.ABC):
 
 
 class FeatureExtractor(WhichRegistryMixins):
-    """Feature extractor."""
+    """Factory for creating feature extractors from registry."""
 
     _Registry = FeatureExtractorRegistry
 
 
 class LearnedDescriptor(Descriptor, abc.ABC, nn.Module):
-    """Learned descriptor.
+    """Descriptor computed using neural network feature extractors.
 
     Parameters
     ----------

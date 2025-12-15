@@ -7,12 +7,14 @@ from geomfum._utils import has_package
 
 
 class Registry(abc.ABC):
+    """Abstract base class for managing registered implementations of components."""
+
     # whether geomfum provides an implementation
     has_internal = False
 
     @classmethod
     def register(cls, key, obj_name, requires=(), as_default=False):
-        """Register.
+        """Register an implementation with optional package dependencies.
 
         Parameters
         ----------
@@ -42,7 +44,7 @@ class Registry(abc.ABC):
 
     @classmethod
     def get(cls, key=None):
-        """Get register object.
+        """Retrieve registered implementation by key.
 
         Parameters
         ----------
@@ -74,7 +76,7 @@ class Registry(abc.ABC):
 
     @classmethod
     def list_available(cls):
-        """List register keys.
+        """List all registered implementation keys.
 
         Returns
         -------
@@ -85,7 +87,7 @@ class Registry(abc.ABC):
 
     @classmethod
     def only_from_registry(cls):
-        """Message for no internal implementation.
+        """Generate error message listing available implementations.
 
         Returns
         -------
@@ -102,15 +104,17 @@ class Registry(abc.ABC):
 
     @classmethod
     def raise_if_no_internal(cls):
-        """Raise error if no internal implementation."""
+        """Raise ValueError if no internal implementation exists."""
         if not cls.has_internal:
             raise ValueError(cls.only_from_registry())
 
 
 class NestedRegistry(abc.ABC):
+    """Two-level registry for managing implementations with nested categorization."""
+
     @classmethod
     def _outer_registry(cls, key=None):
-        """Get outer dict.
+        """Retrieve outer registry by key.
 
         Parameters
         ----------
@@ -128,7 +132,7 @@ class NestedRegistry(abc.ABC):
 
     @classmethod
     def register(cls, key_out, key_in, obj_name, requires=(), as_default=False):
-        """Register.
+        """Register implementation in nested registry structure.
 
         Parameters
         ----------
@@ -149,7 +153,7 @@ class NestedRegistry(abc.ABC):
 
     @classmethod
     def get(cls, key_out, key_in):
-        """Get register object.
+        """Retrieve registered implementation using nested keys.
 
         Parameters
         ----------
@@ -167,7 +171,7 @@ class NestedRegistry(abc.ABC):
 
     @classmethod
     def list_available(cls, key_out=None):
-        """List register keys.
+        """List available implementation keys for specified or all outer categories.
 
         Returns
         -------
@@ -185,7 +189,7 @@ class NestedRegistry(abc.ABC):
 
     @classmethod
     def only_from_registry(cls, key_out=None):
-        """Message for no internal implementation.
+        """Generate error message for missing internal implementation.
 
         Parameters
         ----------
@@ -203,7 +207,7 @@ class NestedRegistry(abc.ABC):
 
     @classmethod
     def raise_if_no_internal(cls, key_out=None):
-        """Raise error if no internal implementation.
+        """Raise ValueError if no internal implementation exists.
 
         Parameters
         ----------
@@ -215,6 +219,8 @@ class NestedRegistry(abc.ABC):
 
 
 class WhichRegistryMixins:
+    """Mixin enabling registry-based instantiation via 'which' parameter."""
+
     def __init__(self, *args, **kwargs):
         self._Registry.raise_if_no_internal()
 
@@ -222,7 +228,7 @@ class WhichRegistryMixins:
 
     @classmethod
     def from_registry(cls, *args, which=None, **kwargs):
-        """Instantiate registered implementation.
+        """Create instance from registered implementation.
 
         Parameters
         ----------
@@ -244,6 +250,8 @@ class WhichRegistryMixins:
 
 
 class MeshWhichRegistryMixins:
+    """Mixin for registry-based instantiation with mesh/point cloud distinction."""
+
     def __init__(self, *args, **kwargs):
         # TODO: has to be improved
         self._Registry.raise_if_no_internal()
@@ -252,7 +260,7 @@ class MeshWhichRegistryMixins:
 
     @classmethod
     def from_registry(cls, *args, mesh=True, which=None, **kwargs):
-        """Instantiate wrapped implementation.
+        """Create instance from registered implementation based on shape type.
 
         Parameters
         ----------

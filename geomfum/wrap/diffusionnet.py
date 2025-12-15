@@ -19,7 +19,6 @@ from geomfum.descriptor.learned import BaseFeatureExtractor
 from geomfum.shape import TriangleMesh
 
 
-# TODO: Implement betching operations. for now diffusionnet accept just one mesh as input
 class DiffusionnetFeatureExtractor(BaseFeatureExtractor, nn.Module):
     """Feature extractor that uses DiffusionNet for geometric deep learning on 3D mesh data.
 

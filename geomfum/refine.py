@@ -9,10 +9,10 @@ import scipy
 from geomfum.convert import (
     FmFromP2pBijectiveConverter,
     FmFromP2pConverter,
-    P2pFromFmConverter,
-    SinkhornP2pFromFmConverter,
-    P2pFromNamConverter,
     NamFromP2pConverter,
+    P2pFromFmConverter,
+    P2pFromNamConverter,
+    SinkhornP2pFromFmConverter,
 )
 
 
@@ -409,10 +409,7 @@ class AdjointBijectiveZoomOut(ZoomOut):
 
     References
     ----------
-    .. [VM2023] Giulio Viganò, Simone Melzi.
-        Adjoint Bijective ZoomOut: Efficient upsampling for learned linearly-invariant
-        embedding. 2023
-        https://github.com/gviga/AB-ZoomOut
+    :cite:`VM2024`
     """
 
     def __init__(

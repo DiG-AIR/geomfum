@@ -3,7 +3,6 @@
 import gsops.backend as gs
 import networkx as nx
 from scipy.sparse.csgraph import shortest_path
-import networkx as nx
 
 from geomfum.numerics.graph import single_source_partial_dijkstra_path_length
 
@@ -43,6 +42,8 @@ def to_nx_edge_graph(shape):
 
 
 class _NxDijkstraMixins(_SingleDispatchMixins):
+    """Mixin implementing distance computations using NetworkX Dijkstra algorithm."""
+
     def dist_matrix(self):
         """Distance between mesh vertices.
 
@@ -96,7 +97,7 @@ class _NxDijkstraMixins(_SingleDispatchMixins):
 
 
 class GraphShortestPathMetric(_NxDijkstraMixins, FinitePointSetMetric):
-    """Shortest path on edge graph of mesh with single source Dijkstra.
+    """Geodesic distance approximation using Dijkstra's algorithm on mesh edge graph.
 
     Parameters
     ----------
@@ -145,7 +146,7 @@ class GraphShortestPathMetric(_NxDijkstraMixins, FinitePointSetMetric):
 
 
 class KClosestGraphShortestPathMetric(_NxDijkstraMixins, FinitePointSetMetric):
-    """Shortest path on edge graph of mesh with Dijkstra.
+    """K-nearest neighbors geodesic distance using partial Dijkstra search.
 
     Parameters
     ----------
@@ -183,6 +184,8 @@ class KClosestGraphShortestPathMetric(_NxDijkstraMixins, FinitePointSetMetric):
 
 
 class _ScipyShortestPathMixins(_SingleDispatchMixins):
+    """Mixin implementing distance computations using SciPy shortest path solver."""
+
     def dist_matrix(self):
         """Distance between mesh vertices.
 
@@ -206,7 +209,7 @@ class _ScipyShortestPathMixins(_SingleDispatchMixins):
 
 
 class ScipyGraphShortestPathMetric(_ScipyShortestPathMixins, FinitePointSetMetric):
-    """Shortest path on edge graph of mesh with Scipy shortest path solver.
+    """Geodesic distance approximation using SciPy's shortest path algorithm.
 
     Parameters
     ----------

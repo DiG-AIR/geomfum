@@ -2,11 +2,9 @@
 
 import gsops.backend as gs
 
-import gsops.backend as gs
-
 
 def compute_tangent_frames(vertices, normals):
-    """Compute tangent frames for vertices.
+    """Construct local orthonormal frames at each vertex from normal vectors.
 
     Parameters
     ----------
@@ -47,7 +45,7 @@ def compute_tangent_frames(vertices, normals):
 
 
 def compute_edge_tangent_vectors(vertices, edges, tangent_frames):
-    """Compute edge tangent vectors.
+    """Project edge vectors onto local tangent plane coordinates.
 
     Parameters
     ----------
@@ -74,9 +72,8 @@ def compute_edge_tangent_vectors(vertices, edges, tangent_frames):
     return gs.stack((comp_x, comp_y), axis=-1)
 
 
-# TODO: implement this as a gradient finder?
 def compute_gradient_matrix_fem(vertices, edges, edge_tangent_vectors):
-    """Compute gradient matrix for finite element method.
+    """Construct gradient operator using local least-squares approximation.
 
     Parameters
     ----------

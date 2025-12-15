@@ -4,14 +4,11 @@ import abc
 
 import gsops.backend as gs
 
-from geomfum._registry import (
-    HeatDistanceMetricRegistry,
-    MeshWhichRegistryMixins,
-)
+from geomfum._registry import HeatDistanceMetricRegistry, MeshWhichRegistryMixins
 
 
 class Metric(abc.ABC):
-    """Metric.
+    """Abstract base class for distance metrics on shapes.
 
     Parameters
     ----------
@@ -41,11 +38,11 @@ class Metric(abc.ABC):
 
 
 class FinitePointSetMetric(Metric, abc.ABC):
-    """Metric on a finite set of indexed points."""
+    """Metric supporting distance matrices and source-to-all computations on discrete point sets."""
 
     @abc.abstractmethod
     def dist_matrix(self):
-        """Distance between all the points of a shape.
+        """Distances between all the points of a shape.
 
         Returns
         -------
@@ -55,7 +52,7 @@ class FinitePointSetMetric(Metric, abc.ABC):
 
     @abc.abstractmethod
     def dist_from_source(self, source_point):
-        """Distance from source point.
+        """Distances from a source point.
 
         Parameters
         ----------
@@ -72,10 +69,10 @@ class FinitePointSetMetric(Metric, abc.ABC):
 
 
 class VertexEuclideanMetric(FinitePointSetMetric):
-    """Euclidean metric between vertices of a Shape."""
+    """Euclidean distance metric in ambient embedding space."""
 
     def dist(self, point_a, point_b):
-        """Distance between shape vertices.
+        """Distances between shape vertices.
 
         Parameters
         ----------
@@ -95,7 +92,7 @@ class VertexEuclideanMetric(FinitePointSetMetric):
         return gs.linalg.norm(diff, axis=diff.ndim - 1)
 
     def dist_from_source(self, source_point):
-        """Distance from source point.
+        """Distances from source point.
 
         Parameters
         ----------
@@ -128,7 +125,7 @@ class VertexEuclideanMetric(FinitePointSetMetric):
         return dist, target_point
 
     def dist_matrix(self):
-        """Distance between shape vertices.
+        """Distances between all shape vertices.
 
         Returns
         -------
@@ -139,7 +136,7 @@ class VertexEuclideanMetric(FinitePointSetMetric):
 
 
 class HeatDistanceMetric(MeshWhichRegistryMixins):
-    """Heat distance metric between vertices of a mesh.
+    """Geodesic distance approximation using the heat method.
 
     References
     ----------
@@ -152,8 +149,10 @@ class HeatDistanceMetric(MeshWhichRegistryMixins):
 
 
 class _SingleDispatchMixins:
+    """Mixin providing scalar-to-batch dispatch for distance computations."""
+
     def dist(self, point_a, point_b):
-        """Distance between mesh vertices.
+        """Distances between mesh vertices.
 
         Parameters
         ----------

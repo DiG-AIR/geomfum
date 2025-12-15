@@ -2,6 +2,7 @@
 
 import torch
 import torch.nn as nn
+
 import geomfum.linalg as la
 
 
@@ -314,7 +315,6 @@ class DescriptorCommutativityLoss(nn.Module):
         torch.Tensor
             Scalar tensor representing the weighted descriptor commutativity loss.
         """
-
         # Compute multiplication operators for each descriptor
         oper_a = self._compute_multiplication_operators(shape_a.basis, desc_a)
         oper_b = self._compute_multiplication_operators(shape_b.basis, desc_b)

@@ -3,8 +3,6 @@
 import gsops.backend as gs
 import sklearn.neighbors as neighbors
 
-
-import gsops.backend as gs
 from geomfum.io import load_pointcloud
 from geomfum.metric import HeatDistanceMetric
 from geomfum.shape.shape_utils import (
@@ -16,7 +14,7 @@ from ._base import Shape
 
 
 class PointCloud(Shape):
-    """Point cloud.
+    """Unstructured point cloud with k-NN connectivity and differential operators.
 
     Parameters
     ----------
@@ -42,7 +40,7 @@ class PointCloud(Shape):
 
     @classmethod
     def from_file(cls, filename):
-        """Instantiate given a file.
+        """Load point cloud from file.
 
         Returns
         -------
@@ -62,10 +60,9 @@ class PointCloud(Shape):
         """
         return self.vertices.shape[0]
 
-    # TODO: check if we can impleemnt this somewhere else ar make it a callable
     @property
     def knn_graph(self):
-        """Compute k-nearest neighbors graph for the point cloud.
+        """K-nearest neighbors connectivity graph.
 
         Returns
         -------
@@ -96,7 +93,7 @@ class PointCloud(Shape):
 
     @property
     def vertex_normals(self):
-        """Compute vertex normals for the point cloud.
+        """Normal vectors estimated from local neighborhoods using PCA.
 
         Returns
         -------
@@ -135,7 +132,7 @@ class PointCloud(Shape):
 
     @property
     def vertex_tangent_frames(self):
-        """Compute vertex tangent frame.
+        """Local orthonormal coordinate frames at each point.
 
         Returns
         -------
@@ -154,7 +151,7 @@ class PointCloud(Shape):
 
     @property
     def edges(self):
-        """Compute edges of the graph of the point cloud."""
+        """Edge connectivity from k-NN graph."""
         if self._edges is None:
             neighbor_indices = gs.array(self.knn_graph["indices"])
             edge_inds_from = gs.repeat(
@@ -166,7 +163,7 @@ class PointCloud(Shape):
 
     @property
     def edge_tangent_vectors(self):
-        """Compute edge tangent vectors.
+        """Edge vectors projected onto local tangent planes.
 
         Returns
         -------
@@ -184,7 +181,7 @@ class PointCloud(Shape):
 
     @property
     def dist_matrix(self):
-        """Compute metric distance matrix.
+        """Pairwise distances between all points using the equipped metric.
 
         Returns
         -------
@@ -198,7 +195,7 @@ class PointCloud(Shape):
         return self._dist_matrix
 
     def equip_with_metric(self, metric):
-        """Set the metric for the point cloud.
+        """Equip point cloud with a distance metric.
 
         Parameters
         ----------

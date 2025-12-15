@@ -1,0 +1,31 @@
+# Documentation dependencies
+sphinx>=4.0
+sphinx-autodoc-typehints
+sphinx-copybutton
+sphinx-design
+sphinx-gallery
+sphinx-math-dollar
+sphinx-autobuild
+pydata_sphinx_theme
+sphinxcontrib-bibtex
+
+# Notebook support
+nbsphinx
+nbsphinx-link
+ipykernel
+ipython
+
+# Visualization for examples
+matplotlib
+plotly
+pyvista
+
+# Core dependencies for examples
+numpy
+scipy
+scikit-learn
+torch
+
+# Additional dependencies
+myst-parser>=0.13
+furo 

@@ -9,12 +9,11 @@ References
 https://github.com/ariva00/aided_transformer/
 """
 
-from typing import Optional
-
+import gsops.backend as gs
 import torch
 import torch.nn as nn
+
 from geomfum.descriptor.learned import BaseFeatureExtractor
-import gsops.backend as gs
 
 
 class TransformerFeatureExtractor(BaseFeatureExtractor, nn.Module):

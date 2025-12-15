@@ -1,3 +1,5 @@
+"""Conversion functions to Plotly objects for visualization."""
+
 import plotly.graph_objects as go
 
 

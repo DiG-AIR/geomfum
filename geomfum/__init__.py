@@ -1,4 +1,1 @@
-__version__ = "0.1.2"
-
-
-import geomfum._backend
+__version__ = "1.0.0"

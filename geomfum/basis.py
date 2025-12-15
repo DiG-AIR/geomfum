@@ -1,4 +1,4 @@
-"""Basis implementations."""
+"""Basis implementations. This module defines various function space bases used in GeomFum. A basis is a set of functionsdefined on a shape that can be used to represent other functions on that shape."""
 
 import abc
 
@@ -8,11 +8,11 @@ import geomfum.linalg as la
 
 
 class Basis(abc.ABC):
-    """Basis."""
+    """Abstract base class for function space bases."""
 
 
 class EigenBasis(Basis):
-    """Eigenbasis.
+    """Basis formed by eigenvectors with dynamic truncation support.
 
     Parameters
     ----------
@@ -30,11 +30,11 @@ class EigenBasis(Basis):
         self.use_k = use_k
 
         # NB: assumes sorted
-        self._n_zeros = gs.sum(gs.isclose(vals, 0.0))
+        self._n_zeros = gs.sum(gs.isclose(vals, 0.0, atol=1e-3))
 
     @property
     def vals(self):
-        """Eigenvalues.
+        """Currently used eigenvalues (truncated to use_k).
 
         Returns
         -------
@@ -45,7 +45,7 @@ class EigenBasis(Basis):
 
     @property
     def vecs(self):
-        """Eigenvectors.
+        """Currently used eigenvectors (truncated to use_k).
 
         Returns
         -------
@@ -78,7 +78,7 @@ class EigenBasis(Basis):
 
     @property
     def spectrum_size(self):
-        """Spectrum size.
+        """Number of eigenvalues/eigenvectors currently in use.
 
         Returns
         -------
@@ -89,7 +89,7 @@ class EigenBasis(Basis):
 
     @property
     def full_spectrum_size(self):
-        """Full spectrum size.
+        """Total number of stored eigenvalues/eigenvectors.
 
         Returns
         -------
@@ -99,7 +99,7 @@ class EigenBasis(Basis):
         return len(self.full_vals)
 
     def truncate(self, spectrum_size):
-        """Truncate basis.
+        """Create new basis with reduced spectrum size.
 
         Parameters
         ----------
@@ -118,7 +118,7 @@ class EigenBasis(Basis):
 
 
 class LaplaceEigenBasis(EigenBasis):
-    """Laplace eigenbasis.
+    """Eigenbasis of the Laplace-Beltrami operator with mass matrix projection.
 
     Parameters
     ----------
@@ -140,7 +140,7 @@ class LaplaceEigenBasis(EigenBasis):
 
     @property
     def use_k(self):
-        """Number of values to use on computations.
+        """Number of basis functions actively used in computations.
 
         Returns
         -------
@@ -151,7 +151,7 @@ class LaplaceEigenBasis(EigenBasis):
 
     @use_k.setter
     def use_k(self, value):
-        """Set number of values to use on computations.
+        """Set number of basis functions to use (invalidates cached pinv).
 
         Parameters
         ----------
@@ -163,7 +163,7 @@ class LaplaceEigenBasis(EigenBasis):
 
     @property
     def pinv(self):
-        """Inverse of the eigenvectors matrix.
+        """L2 pseudo-inverse for projecting functions onto the basis.
 
         Return
         ------
@@ -175,7 +175,7 @@ class LaplaceEigenBasis(EigenBasis):
         return self._pinv
 
     def truncate(self, spectrum_size):
-        """Truncate basis.
+        """Create new basis with reduced spectrum size.
 
         Parameters
         ----------
@@ -197,17 +197,17 @@ class LaplaceEigenBasis(EigenBasis):
         )
 
     def project(self, array):
-        """Project on the eigenbasis.
+        """Project function onto the eigenbasis using L2 inner product.
 
         Parameters
         ----------
         array : array-like, shape=[..., n_vertices]
-            Array to project.
+            Function values to project.
 
         Returns
         -------
         projected_array : array-like, shape=[..., spectrum_size]
-            Projected array.
+            Spectral coefficients.
         """
         return la.matvecmul(
             self.vecs.T,

@@ -9,6 +9,14 @@ from geomfum.operator import Gradient, Laplacian
 
 
 class Shape(abc.ABC):
+    """Abstract base class for geometric shapes with differential operators.
+
+    Parameters
+    ----------
+    is_mesh : bool
+        Whether the shape is a mesh (True) or point cloud (False).
+    """
+
     def __init__(self, is_mesh):
         self.is_mesh = is_mesh
 
@@ -18,7 +26,24 @@ class Shape(abc.ABC):
         self.landmark_indices = None
 
     def equip_with_operator(self, name, Operator, allow_overwrite=True, **kwargs):
-        """Equip with operator."""
+        """Equip shape with a differential or geometric operator.
+
+        Parameters
+        ----------
+        name : str
+            Attribute name for the operator.
+        Operator : class
+            Operator class to instantiate.
+        allow_overwrite : bool, optional
+            Whether to allow overwriting existing attributes (default: True).
+        **kwargs
+            Additional arguments passed to the Operator constructor.
+
+        Returns
+        -------
+        self : Shape
+            The shape instance for method chaining.
+        """
         name_exists = hasattr(self, name)
         if name_exists:
             if allow_overwrite:
@@ -33,7 +58,7 @@ class Shape(abc.ABC):
 
     @property
     def basis(self):
-        """Basis.
+        """Function basis associated with the shape.
 
         Returns
         -------
@@ -46,7 +71,7 @@ class Shape(abc.ABC):
         return self._basis
 
     def set_basis(self, basis):
-        """Set basis.
+        """Set function basis associated with the shape.
 
         Parameters
         ----------
@@ -56,7 +81,7 @@ class Shape(abc.ABC):
         self._basis = basis
 
     def set_landmarks(self, landmark_indices, append=False):
-        """Set landmarks.
+        """Set landmarks points on the shape.
 
         Parameters
         ----------

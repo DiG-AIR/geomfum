@@ -12,7 +12,7 @@ from ._base import Descriptor
 
 
 class Subsampler(abc.ABC):
-    """Subsampler."""
+    """Abstract base class for array subsampling operations."""
 
     @abc.abstractmethod
     def __call__(self, array):
@@ -31,7 +31,7 @@ class Subsampler(abc.ABC):
 
 
 class ArangeSubsampler(Subsampler):
-    """Subsampler based on arange method.
+    """Subsampler using uniform stride-based indexing.
 
     Parameters
     ----------
@@ -66,7 +66,7 @@ class ArangeSubsampler(Subsampler):
 
 
 class Normalizer(abc.ABC):
-    """Normalizer."""
+    """Abstract base class for descriptor normalization."""
 
     @abc.abstractmethod
     def __call__(self, shape, array):
@@ -87,7 +87,7 @@ class Normalizer(abc.ABC):
 
 
 class L2InnerNormalizer(Normalizer):
-    """L2 inner normalizer."""
+    """Normalizer using L2 inner product with mass matrix."""
 
     def __call__(self, shape, array):
         """Normalize array with respect to L2 inner product.
@@ -115,7 +115,7 @@ class L2InnerNormalizer(Normalizer):
 
 
 class DescriptorPipeline:
-    """Descriptor pipeline.
+    """Sequential pipeline for computing and processing shape descriptors.
 
     Parameters
     ----------

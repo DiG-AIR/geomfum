@@ -1,10 +1,10 @@
-"""Wraps plotly functions."""
+"""Plotly plotting module."""
 
 import plotly.graph_objects as go
+from matplotlib import colors as mcolors
 
 from geomfum.plot import ShapePlotter
 from geomfum.shape.convert import to_go_mesh3d, to_go_pointcloud
-from matplotlib import colors as mcolors
 
 
 class PlotlyShapePlotter(ShapePlotter):

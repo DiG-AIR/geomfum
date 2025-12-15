@@ -1,9 +1,10 @@
-"""Functional operators."""
+"""Functional operators. This module defines various class to support implementation of functional operators, like Gradient and Laplacian."""
 
 import abc
 
 import gsops.backend as gs
 
+import geomfum.linalg as la
 from geomfum._registry import (
     FaceDivergenceOperatorRegistry,
     FaceOrientationOperatorRegistry,
@@ -11,14 +12,12 @@ from geomfum._registry import (
     WhichRegistryMixins,
 )
 from geomfum.laplacian import LaplacianFinder, LaplacianSpectrumFinder
-from geomfum.shape.shape_utils import compute_gradient_matrix_fem
 
 
 # TODO: remove functional; simply use operator
 class FunctionalOperator(abc.ABC):
-    """Functional operator."""
+    """Abstract class fot Functional operator."""
 
-    # TODO: move to operator
     def __init__(self, shape):
         self._shape = shape
 
@@ -30,13 +29,11 @@ class FunctionalOperator(abc.ABC):
         ----------
         point : array-like, shape=[..., n_vertices]
         """
-        # TODO: update docstrings
 
 
 class VectorFieldOperator(abc.ABC):
     """Vector field operator."""
 
-    # TODO: really needed?
     def __init__(self, shape):
         self._shape = shape
 
@@ -48,11 +45,10 @@ class VectorFieldOperator(abc.ABC):
         ----------
         point : array-like, shape=[..., n_faces, 3]
         """
-        # TODO: update docstrings
 
 
 class Laplacian(FunctionalOperator):
-    """Laplacian.
+    """Laplacian operator on a shape.
 
     Check [P2016]_ for representation choice.
 
@@ -120,7 +116,7 @@ class Laplacian(FunctionalOperator):
         return self._basis
 
     def find(self, laplacian_finder=None, recompute=False):
-        """Find Laplacian.
+        """Compute the laplacian matrices using an indicated algorithm.
 
         Parameters
         ----------
@@ -159,7 +155,7 @@ class Laplacian(FunctionalOperator):
         set_as_basis=True,
         recompute=False,
     ):
-        """Find Laplacian spectrum.
+        """Compute the spectrum of the Laplacian operator.
 
         Parameters
         ----------
@@ -199,14 +195,22 @@ class Laplacian(FunctionalOperator):
 
         return self.basis.full_vals, self.basis.full_vecs
 
-    def __call__(self, point):
+    def __call__(self, function):
         """Apply operator.
 
         Parameters
         ----------
-        point : array-like, shape=[..., n_vertices]
+        function : array-like, shape=[..., n_vertices]
+
+        Returns
+        -------
+        result : array-like, shape=[..., n_vertices]
+            The Laplacian applied to the input function.
         """
-        raise NotImplementedError("Not implemented yet.")
+        Sf = la.matvecmul(self.stiffness_matrix, function)
+        mass_vec = gs.sparse.to_dense(self.mass_matrix).diagonal()
+
+        return la.matvecmul(gs.sparse.dia_matrix(1 / mass_vec), Sf)
 
 
 class FaceValuedGradient(WhichRegistryMixins, FunctionalOperator):
@@ -246,6 +250,8 @@ class Gradient(FunctionalOperator):
             and the imaginary part corresponds to the Y component.
         """
         if self._gradient_matrix is None:
+            from geomfum.shape.shape_utils import compute_gradient_matrix_fem
+
             self._gradient_matrix = compute_gradient_matrix_fem(
                 self._shape.vertices,
                 self._shape.edges,
@@ -254,12 +260,12 @@ class Gradient(FunctionalOperator):
 
         return self._gradient_matrix
 
-    def __call__(self, point):
+    def __call__(self, function):
         """Apply operator.
 
         Parameters
         ----------
-        point : array-like, shape=[..., n_vertices]
+        function : array-like, shape=[..., n_vertices]
 
         Returns
         -------
@@ -267,8 +273,8 @@ class Gradient(FunctionalOperator):
             Gradient of the function at the vertices, where the last dimension
             contains the X and Y components in the local tangent frame.
         """
-        feat_gradX = self.gradient_matrix.real @ point
-        feat_gradY = self.gradient_matrix.imag @ point
+        feat_gradX = self.gradient_matrix.real @ function
+        feat_gradY = self.gradient_matrix.imag @ function
         return gs.stack((feat_gradX, feat_gradY), -1)
 
 

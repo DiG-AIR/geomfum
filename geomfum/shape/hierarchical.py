@@ -1,4 +1,4 @@
-"""Hierarchical objects."""
+"""Hierarchical objects module. An HierarchicalShape is composed of a low-resolution and a high-resolution shape, with methods to transfer functions between the two resolutions."""
 
 import abc
 
@@ -7,7 +7,7 @@ from geomfum.basis import EigenBasis
 
 
 class HierarchicalShape(abc.ABC):
-    """Hierarchical shape.
+    """Hierarchical shape. An HierarchicalShape is composed of a low-resolution and a high-resolution shape, with methods to transfer functions between the two resolutions.
 
     Parameters
     ----------
@@ -82,7 +82,7 @@ class HierarchicalMesh(WhichRegistryMixins, HierarchicalShape):
 
 
 class NestedHierarchicalShape:
-    """Nested hierachical shape.
+    """Nested hierachical shape. An object composed of multiple hierarchical shapes from low to high resolution.
 
     Parameters
     ----------
