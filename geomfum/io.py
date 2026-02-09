@@ -48,7 +48,7 @@ def load_tetrahedral_mesh(filename):
             f"Available cell types: {[c.type for c in mesh.cells]}"
         )
 
-    return gs.from_numpy(mesh.points), gs.from_numpy(tets)
+    return gs.array(mesh.points), gs.array(tets)
 
 
 def load_pointcloud(filename):

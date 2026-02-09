@@ -114,6 +114,13 @@ register_feature_extractor(
     as_default=False,
 )
 
+register_feature_extractor(
+    "volumetric_diffusionnet",
+    "VolumetricDiffusionnetFeatureExtractor",
+    requires="torch",
+    as_default=False,
+)
+
 register_neighbor_finder(
     "pot", "PotSinkhornNeighborFinder", requires="ot", as_default=True
 )

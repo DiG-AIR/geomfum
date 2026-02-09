@@ -144,10 +144,12 @@ class Laplacian(FunctionalOperator):
                 from geomfum.laplacian import TetrahedralLaplacianFinder
 
                 laplacian_finder = TetrahedralLaplacianFinder()
-            else:
+            elif self._shape.shape_type == "pointcloud":
                 laplacian_finder = LaplacianFinder.from_registry(
                     shape_type=self._shape.shape_type, which="robust"
                 )
+            else:
+                laplacian_finder = LaplacianFinder()
 
         self._stiffness_matrix, self._mass_matrix = laplacian_finder(self._shape)
 

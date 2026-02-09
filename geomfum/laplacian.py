@@ -86,7 +86,10 @@ class LaplacianFinder(ShapeWhichRegistryMixins, BaseLaplacianFinder):
             coalesce=True,
         )
 
-        mass_matrix = gs.sparse.dia_matrix(shape.vertex_areas)
+        mass_matrix = gs.to_device(
+            gs.sparse.dia_matrix(gs.to_device(shape.vertex_areas, "cpu")),
+            getattr(shape.vertices, "device", None),
+        )
         return stiffness_matrix, mass_matrix
 
 
@@ -116,8 +119,7 @@ class TetrahedralLaplacianFinder(BaseLaplacianFinder):
         tets = shape.tets
         n_verts = shape.n_vertices
 
-        # Mass matrix (diagonal, from vertex volumes)
-        mass_matrix = gs.sparse.dia_matrix(shape.vertex_areas)
+        device = getattr(vertices, "device", None)
 
         SI = []
         SJ = []
@@ -172,13 +174,13 @@ class TetrahedralLaplacianFinder(BaseLaplacianFinder):
         )
 
         # Diagonal is negative sum of rows (to ensure zero row sum)
-        diag_data = gs.array(
-            gs.sparse.to_scipy_csc(off_diag).sum(axis=1)
-        ).flatten()
+        diag_data = gs.to_device(
+            gs.array(gs.sparse.to_scipy_csc(off_diag).sum(axis=1)).flatten(), device
+        )
 
         # Build final matrix: off-diagonal - diag(row_sums)
-        all_row = gs.concatenate([row, gs.arange(n_verts)])
-        all_col = gs.concatenate([col, gs.arange(n_verts)])
+        all_row = gs.concatenate([row, gs.to_device(gs.arange(n_verts), device)])
+        all_col = gs.concatenate([col, gs.to_device(gs.arange(n_verts), device)])
         all_data = gs.concatenate([data, -diag_data])
 
         stiffness_matrix = gs.sparse.csc_matrix(
@@ -186,6 +188,11 @@ class TetrahedralLaplacianFinder(BaseLaplacianFinder):
             all_data,
             shape=(n_verts, n_verts),
             coalesce=True,
+        )
+
+        mass_matrix = gs.to_device(
+            gs.sparse.dia_matrix(gs.to_device(shape.vertex_areas, "cpu")),
+            getattr(shape.vertices, "device", None),
         )
 
         return -stiffness_matrix, mass_matrix

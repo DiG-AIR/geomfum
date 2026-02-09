@@ -22,9 +22,14 @@ class TetrahedralMesh(Shape):
 
     def __init__(self, vertices, tets, faces=None):
         super().__init__(shape_type="tetmesh")
-        self.vertices = gs.asarray(vertices)
-        self.tets = gs.asarray(tets)
-        self.faces = gs.asarray(faces) if faces is not None else None
+        self.vertices = gs.array(vertices)
+        self.tets = gs.array(tets)
+        self.faces = gs.array(faces) if faces is not None else None
+
+        # Override the surface gradient with the tetrahedral gradient
+        from geomfum.operator import TetrahedralGradient
+
+        self.gradient = TetrahedralGradient(self)
 
         self._tet_volumes = None
         self._vertex_areas = None
@@ -48,6 +53,8 @@ class TetrahedralMesh(Shape):
             A tetrahedral mesh.
         """
         vertices, tets = load_tetrahedral_mesh(filename)
+        vertices = gs.cast(vertices, dtype=gs.float64)
+        tets = gs.cast(tets, dtype=gs.int64)
         return cls(vertices, tets)
 
     @property
@@ -119,13 +126,20 @@ class TetrahedralMesh(Shape):
             Mass associated with each vertex.
         """
         if self._vertex_areas is None:
+            device = getattr(self.vertices, "device", None)
             vol = self.tet_volumes
             id_vertices = gs.reshape(self.tets, (-1,))
             val = gs.reshape(
                 gs.broadcast_to(gs.expand_dims(vol, axis=-1), (self.n_tets, 4)),
                 (-1,),
             )
-            vertex_mass = gs.scatter_sum_1d(index=id_vertices, src=val)
+            # TODO: implement device handling of scatter_sum in gsops and use it here instead of converting to cpu
+            vertex_mass = gs.to_device(
+                gs.scatter_sum_1d(
+                    index=gs.to_device(id_vertices, "cpu"), src=gs.to_device(val, "cpu")
+                ),
+                device,
+            )
             self._vertex_areas = vertex_mass / 4.0
 
         return self._vertex_areas

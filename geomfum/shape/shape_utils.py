@@ -201,7 +201,7 @@ def compute_tetrahedral_gradient_matrix(vertices, tets, tet_volumes):
     data_vals = []
 
     for pid in range(n_tets):
-        vol = max(float(tet_volumes[pid]), 1e-5)
+        vol = max(tet_volumes[pid], 1e-5)
         tet_vids = tets[pid]
 
         # Pre-compute face normals, areas and vertex sets
@@ -219,7 +219,7 @@ def compute_tetrahedral_gradient_matrix(vertices, tets, tet_volumes):
             normal = cross / (2.0 * area + 1e-15)
 
             face_normals.append(normal)
-            face_areas.append(float(area))
+            face_areas.append(area)
             face_vertex_sets.append(
                 {int(tet_vids[li[0]]), int(tet_vids[li[1]]), int(tet_vids[li[2]])}
             )
@@ -238,7 +238,7 @@ def compute_tetrahedral_gradient_matrix(vertices, tets, tet_volumes):
             for dim in range(3):
                 row_inds.append(base_row + dim)
                 col_inds.append(vid)
-                data_vals.append(float(contrib[dim]))
+                data_vals.append(contrib[dim])
 
     row_inds = gs.asarray(row_inds)
     col_inds = gs.asarray(col_inds)
@@ -278,14 +278,20 @@ def compute_tetrahedral_gradient_matrix_vectorized(vertices, tets, tet_volumes):
     """
     n_vertices = vertices.shape[0]
     n_tets = tets.shape[0]
+    device = getattr(vertices, "device", None)
 
     # Face opposite to local vertex i — same winding as the loop version
-    face_local = [
-        [1, 2, 3],
-        [0, 3, 2],
-        [0, 1, 3],
-        [0, 2, 1],
-    ]
+    face_local = gs.to_device(
+        gs.array(
+            [
+                [1, 2, 3],
+                [0, 3, 2],
+                [0, 1, 3],
+                [0, 2, 1],
+            ]
+        ),
+        device=device,
+    )
 
     # Compute face normals and areas for all 4 faces, all tets at once
     # face_normals: [4, n_tets, 3],  face_areas: [4, n_tets]
@@ -314,11 +320,11 @@ def compute_tetrahedral_gradient_matrix_vectorized(vertices, tets, tet_volumes):
     col_inds = []
     data_vals = []
 
-    tet_indices = gs.arange(n_tets)
+    tet_indices = gs.to_device(gs.arange(n_tets), device=device)
 
     for local_vi in range(4):
         # Faces adjacent to local vertex local_vi are all except face local_vi
-        contrib = gs.zeros((n_tets, 3))
+        contrib = gs.to_device(gs.zeros((n_tets, 3)), device=device)
         for fi in range(4):
             if fi == local_vi:
                 continue

@@ -1,6 +1,7 @@
 """Definition of triangle mesh."""
 
 import gsops.backend as gs
+from torch import device
 
 from geomfum.io import load_mesh
 from geomfum.metric import HeatDistanceMetric
@@ -250,15 +251,18 @@ class TriangleMesh(Shape):
             Per-vertex areas.
         """
         area = self.face_areas
-
+        device = getattr(self.vertices, "device", None)
         id_vertices = gs.broadcast_to(gs.reshape(self.faces, (-1,)), self.n_faces * 3)
         val = gs.reshape(
             gs.broadcast_to(gs.expand_dims(area, axis=-1), (self.n_faces, 3)),
             (-1,),
         )
-        incident_areas = gs.scatter_sum_1d(
-            index=id_vertices,
-            src=val,
+
+        incident_areas = gs.to_device(
+            gs.scatter_sum_1d(
+                index=gs.to_device(id_vertices, "cpu"), src=gs.to_device(val, "cpu")
+            ),
+            device,
         )
         return incident_areas / 3.0
 

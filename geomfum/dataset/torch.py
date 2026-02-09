@@ -1,4 +1,4 @@
-"""Datasets for Loading Meshes and Point Clouds using PyTorch."""
+"""Datasets for Loading Meshes, Point Clouds, and Tetrahedral Meshes using PyTorch."""
 
 import itertools
 import os
@@ -14,7 +14,7 @@ from torch.utils.data import Dataset
 
 from geomfum.metric import VertexEuclideanMetric
 from geomfum.metric.mesh import ScipyGraphShortestPathMetric
-from geomfum.shape import PointCloud, TriangleMesh
+from geomfum.shape import PointCloud, TetrahedralMesh, TriangleMesh
 
 
 class ShapeDataset(Dataset):
@@ -25,7 +25,7 @@ class ShapeDataset(Dataset):
     dataset_dir : str
         Path to the directory containing the dataset. We assume the dataset directory to have a subfolder shapes, for shapes, corr, for correspondences and dist, for cached distance matrices.
     shape_type : str
-        Type of shape to load. Either 'mesh' or 'pointcloud'.
+        Type of shape to load. One of 'mesh', 'pointcloud', or 'tetmesh'.
     spectral : bool
         Whether to compute the spectral features.
     distances : bool
@@ -48,17 +48,22 @@ class ShapeDataset(Dataset):
         k=200,
         device=None,
     ):
-        if shape_type not in ["mesh", "pointcloud"]:
-            raise ValueError("shape_type must be either 'mesh' or 'pointcloud'")
+        if shape_type not in ["mesh", "pointcloud", "tetmesh"]:
+            raise ValueError("shape_type must be 'mesh', 'pointcloud', or 'tetmesh'")
 
         self.dataset_dir = dataset_dir
         self.shape_type = shape_type
         self.shape_dir = os.path.join(dataset_dir, "shapes")
+        if shape_type == "tetmesh":
+            valid_extensions = (".mesh", ".vtk", ".vtu")
+        else:
+            valid_extensions = (".off", ".ply", ".obj")
+
         all_shape_files = sorted(
             [
                 f
                 for f in os.listdir(self.shape_dir)
-                if f.lower().endswith((".off", ".ply", ".obj"))
+                if f.lower().endswith(valid_extensions)
             ]
         )
         self.shape_files = all_shape_files
@@ -79,16 +84,21 @@ class ShapeDataset(Dataset):
         self.corrs = {}
 
         for filename in self.shape_files:
-            ext = os.path.splitext(filename)[1][1:]
-            if ext not in meshio._helpers._writer_map:
-                warnings.warn(f"Skipped unsupported mesh file: {filename}")
-                continue
+            # Skip meshio writer map check for tetrahedral formats
+            # (.mesh may not be in the writer map but is readable by meshio)
+            if self.shape_type != "tetmesh":
+                ext = os.path.splitext(filename)[1][1:]
+                if ext not in meshio._helpers._writer_map:
+                    warnings.warn(f"Skipped unsupported mesh file: {filename}")
+                    continue
 
             filepath = os.path.join(self.shape_dir, filename)
 
             # Load shape based on type
             if self.shape_type == "mesh":
                 shape = TriangleMesh.from_file(filepath)
+            elif self.shape_type == "tetmesh":
+                shape = TetrahedralMesh.from_file(filepath)
             else:  # pointcloud
                 shape = PointCloud.from_file(filepath)
 
@@ -97,7 +107,7 @@ class ShapeDataset(Dataset):
             # preprocess
             if spectral:
                 shape.laplacian.find_spectrum(spectrum_size=k, set_as_basis=True)
-
+                shape.gradient.gradient_matrix
             self.shapes[filename] = shape
 
             corr_filename = base_name + ".vts"
@@ -147,7 +157,7 @@ class ShapeDataset(Dataset):
                 if "D" in mat_contents:
                     geod_distance_matrix = mat_contents["D"]
             if geod_distance_matrix is None:
-                if self.shape_type == "mesh":
+                if self.shape_type in ("mesh", "tetmesh"):
                     metric = ScipyGraphShortestPathMetric(shape)
                 else:  # pointcloud
                     metric = VertexEuclideanMetric(shape)
@@ -162,15 +172,18 @@ class ShapeDataset(Dataset):
 
         # Move shape data to device
         shape.vertices = gs.to_device(shape.vertices, self.device)
-        shape.basis.full_vals = gs.to_device(shape.basis.full_vals, self.device)
-        shape.basis.full_vecs = gs.to_device(shape.basis.full_vecs, self.device)
-        shape.laplacian._mass_matrix = gs.to_device(
-            shape.laplacian._mass_matrix, self.device
-        )
-
-        # Only move faces to device for meshes
+        # Only move connectivity arrays to device for meshes/tetmeshes
         if self.shape_type == "mesh":
             shape.faces = gs.to_device(shape.faces, self.device)
+        elif self.shape_type == "tetmesh":
+            shape.tets = gs.to_device(shape.tets, self.device)
+
+        if self.spectral:
+            shape.basis.full_vals = gs.to_device(shape.basis.full_vals, self.device)
+            shape.basis.full_vecs = gs.to_device(shape.basis.full_vecs, self.device)
+            shape.laplacian._mass_matrix = gs.to_device(
+                shape.laplacian._mass_matrix, self.device
+            )
 
         shape_data.update({"shape": shape})
 
@@ -228,6 +241,29 @@ class PointCloudDataset(ShapeDataset):
         )
 
 
+class TetrahedralMeshDataset(ShapeDataset):
+    """ShapeDataset for loading and preprocessing tetrahedral mesh data."""
+
+    def __init__(
+        self,
+        dataset_dir,
+        spectral=False,
+        distances=False,
+        correspondences=True,
+        k=200,
+        device=None,
+    ):
+        super().__init__(
+            dataset_dir=dataset_dir,
+            shape_type="tetmesh",
+            spectral=spectral,
+            distances=distances,
+            correspondences=correspondences,
+            k=k,
+            device=device,
+        )
+
+
 class PairsDataset(Dataset):
     """
     Dataset of pairs of shapes. Each item is a pair (source, target) of shapes from the provided dataset.
@@ -273,7 +309,7 @@ class PairsDataset(Dataset):
 
         Parameters
         ----------
-        pairs_ratio : float
+        pairs_ratio : scalar, optional
             Ratio of pairs to generate compared to the total number of possible pairs.
             Default is 0.5, meaning half of the possible pairs will be generated.
         """
