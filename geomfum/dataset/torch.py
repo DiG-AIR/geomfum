@@ -55,7 +55,7 @@ class ShapeDataset(Dataset):
         self.shape_type = shape_type
         self.shape_dir = os.path.join(dataset_dir, "shapes")
         if shape_type == "tetmesh":
-            valid_extensions = (".mesh", ".vtk", ".vtu")
+            valid_extensions = (".mesh",".msh", ".vtk", ".vtu")
         else:
             valid_extensions = (".off", ".ply", ".obj")
 
