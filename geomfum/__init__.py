@@ -1,1 +1,3 @@
-__version__ = "0.1.0"
+"""GeomFuM: a Python Package for Machine Learning with Functional Maps."""
+
+__version__ = "1.0.0"

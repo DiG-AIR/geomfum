@@ -1,16 +1,18 @@
-"""Basis implementations."""
+"""Basis implementations. This module defines various function space bases used in GeomFum. A basis is a set of functionsdefined on a shape that can be used to represent other functions on that shape."""
 
 import abc
+
+import gsops.backend as gs
 
 import geomfum.linalg as la
 
 
 class Basis(abc.ABC):
-    """Basis."""
+    """Abstract base class for function space bases."""
 
 
 class EigenBasis(Basis):
-    """Eigenbasis.
+    """Basis formed by eigenvectors with dynamic truncation support.
 
     Parameters
     ----------
@@ -27,9 +29,12 @@ class EigenBasis(Basis):
         self.full_vecs = vecs
         self.use_k = use_k
 
+        # NB: assumes sorted
+        self._n_zeros = gs.sum(gs.isclose(vals, 0.0, atol=1e-3))
+
     @property
     def vals(self):
-        """Eigenvalues.
+        """Currently used eigenvalues (truncated to use_k).
 
         Returns
         -------
@@ -40,18 +45,40 @@ class EigenBasis(Basis):
 
     @property
     def vecs(self):
-        """Eigenvectors.
+        """Currently used eigenvectors (truncated to use_k).
 
         Returns
         -------
-        vecs : array-like, shape=[dim, full_spectrum_size]
+        vecs : array-like, shape=[dim, spectrum_size]
             Eigenvectors.
         """
         return self.full_vecs[:, : self.use_k]
 
     @property
+    def nonzero_vals(self):
+        """Nonzero eigenvalues.
+
+        Returns
+        -------
+        vals : array-like, shape=[spectrum_size - n_zeros]
+            Eigenvalues.
+        """
+        return self.vals[self._n_zeros :]
+
+    @property
+    def nonzero_vecs(self):
+        """Eigenvectors corresponding to nonzero eigenvalues.
+
+        Returns
+        -------
+        vecs : array-like, shape=[dim, spectrum_size - n_zeros]
+            Eigenvectors.
+        """
+        return self.vecs[:, self._n_zeros :]
+
+    @property
     def spectrum_size(self):
-        """Spectrum size.
+        """Number of eigenvalues/eigenvectors currently in use.
 
         Returns
         -------
@@ -62,7 +89,7 @@ class EigenBasis(Basis):
 
     @property
     def full_spectrum_size(self):
-        """Full spectrum size.
+        """Total number of stored eigenvalues/eigenvectors.
 
         Returns
         -------
@@ -72,7 +99,7 @@ class EigenBasis(Basis):
         return len(self.full_vals)
 
     def truncate(self, spectrum_size):
-        """Truncate basis.
+        """Create new basis with reduced spectrum size.
 
         Parameters
         ----------
@@ -91,7 +118,7 @@ class EigenBasis(Basis):
 
 
 class LaplaceEigenBasis(EigenBasis):
-    """Laplace eigenbasis.
+    """Eigenbasis of the Laplace-Beltrami operator with mass matrix projection.
 
     Parameters
     ----------
@@ -113,7 +140,7 @@ class LaplaceEigenBasis(EigenBasis):
 
     @property
     def use_k(self):
-        """Number of values to use on computations.
+        """Number of basis functions actively used in computations.
 
         Returns
         -------
@@ -124,7 +151,7 @@ class LaplaceEigenBasis(EigenBasis):
 
     @use_k.setter
     def use_k(self, value):
-        """Set number of values to use on computations.
+        """Set number of basis functions to use (invalidates cached pinv).
 
         Parameters
         ----------
@@ -136,7 +163,7 @@ class LaplaceEigenBasis(EigenBasis):
 
     @property
     def pinv(self):
-        """Inverse of the eigenvectors matrix.
+        """L2 pseudo-inverse for projecting functions onto the basis.
 
         Return
         ------
@@ -148,7 +175,7 @@ class LaplaceEigenBasis(EigenBasis):
         return self._pinv
 
     def truncate(self, spectrum_size):
-        """Truncate basis.
+        """Create new basis with reduced spectrum size.
 
         Parameters
         ----------
@@ -170,30 +197,19 @@ class LaplaceEigenBasis(EigenBasis):
         )
 
     def project(self, array):
-        """Project on the eigenbasis.
+        """Project function onto the eigenbasis using L2 inner product.
 
         Parameters
         ----------
         array : array-like, shape=[..., n_vertices]
-            Array to project.
+            Function values to project.
 
         Returns
         -------
         projected_array : array-like, shape=[..., spectrum_size]
-            Projected array.
+            Spectral coefficients.
         """
         return la.matvecmul(
             self.vecs.T,
             la.matvecmul(self._shape.laplacian.mass_matrix, array),
         )
-
-    @property
-    def landmark_indices(self):
-        """Landmarks.
-
-        Returns
-        -------
-        landmark_indices : array-like, shape=[n_landmarks]
-            Landmarks.
-        """
-        return self._shape.landmark_indices

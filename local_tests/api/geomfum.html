@@ -1,0 +1,1282 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>geomfum package &#8212; GeomFuM 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/geomfum';</script>
+    <link rel="canonical" href="geomfum.github.io/api/geomfum.html" />
+    <link rel="icon" href="../_static/GeomFuMlogo_only.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="geomfum.dataset package" href="geomfum.dataset.html" />
+    <link rel="prev" title="API Reference" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0" />
+    <meta name="docbuild:last-update" content="Dec 15, 2025, 11:28:37 AM"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/GeomFuMlogo.png" class="logo__image only-light" alt="GeomFuM 0.1.0 documentation - Home"/>
+    <img src="../_static/GeomFuMlogo.png" class="logo__image only-dark pst-js-only" alt="GeomFuM 0.1.0 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../usage.html">
+    Usage
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../concepts/index.html">
+    Concepts
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="index.html">
+    API Reference
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/3diglab/geomfum" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/THHku2ckJs" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../usage.html">
+    Usage
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../concepts/index.html">
+    Concepts
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="index.html">
+    API Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/3diglab/geomfum" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/THHku2ckJs" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/getting_started.html">Getting Started with GeomFuM</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">API Reference</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active has-children"><a class="current reference internal" href="#">geomfum package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.dataset.html">geomfum.dataset package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.descriptor.html">geomfum.descriptor package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.metric.html">geomfum.metric package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.numerics.html">geomfum.numerics package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="geomfum.shape.html">geomfum.shape package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="geomfum.shape.convert.html">geomfum.shape.convert package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html">geomfum.wrap package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../installation.html" class="nav-link">Installation</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">API Reference</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">geomfum package</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="geomfum-package">
+<h1>geomfum package<a class="headerlink" href="#geomfum-package" title="Link to this heading">#</a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="geomfum.dataset.html">geomfum.dataset package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.dataset.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.dataset.html#module-geomfum.dataset.notebook">geomfum.dataset.notebook module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.dataset.html#geomfum.dataset.notebook.DownloadableFile"><code class="docutils literal notranslate"><span class="pre">DownloadableFile</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="geomfum.dataset.html#geomfum.dataset.notebook.DownloadableFile.get_filename"><code class="docutils literal notranslate"><span class="pre">DownloadableFile.get_filename()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.dataset.html#geomfum.dataset.notebook.NotebooksDataset"><code class="docutils literal notranslate"><span class="pre">NotebooksDataset</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="geomfum.dataset.html#geomfum.dataset.notebook.NotebooksDataset.get_filename"><code class="docutils literal notranslate"><span class="pre">NotebooksDataset.get_filename()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="geomfum.dataset.html#geomfum.dataset.notebook.NotebooksDataset.get_filenames"><code class="docutils literal notranslate"><span class="pre">NotebooksDataset.get_filenames()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.dataset.html#geomfum-dataset-torch-module">geomfum.dataset.torch module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.dataset.html#module-geomfum.dataset">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.dataset.html#geomfum.dataset.NotebooksDataset"><code class="docutils literal notranslate"><span class="pre">NotebooksDataset</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="geomfum.dataset.html#geomfum.dataset.NotebooksDataset.get_filename"><code class="docutils literal notranslate"><span class="pre">NotebooksDataset.get_filename()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="geomfum.dataset.html#geomfum.dataset.NotebooksDataset.get_filenames"><code class="docutils literal notranslate"><span class="pre">NotebooksDataset.get_filenames()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="geomfum.descriptor.html">geomfum.descriptor package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.descriptor.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.descriptor.html#geomfum-descriptor-learned-module">geomfum.descriptor.learned module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.descriptor.html#geomfum-descriptor-pipeline-module">geomfum.descriptor.pipeline module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.descriptor.html#geomfum-descriptor-spectral-module">geomfum.descriptor.spectral module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.descriptor.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="geomfum.metric.html">geomfum.metric package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.metric.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.metric.html#geomfum-metric-mesh-module">geomfum.metric.mesh module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.metric.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="geomfum.numerics.html">geomfum.numerics package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.numerics.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.numerics.html#geomfum-numerics-eig-module">geomfum.numerics.eig module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.numerics.html#module-geomfum.numerics.graph">geomfum.numerics.graph module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.numerics.html#geomfum.numerics.graph.single_source_partial_dijkstra_path_length"><code class="docutils literal notranslate"><span class="pre">single_source_partial_dijkstra_path_length()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.numerics.html#geomfum-numerics-optimization-module">geomfum.numerics.optimization module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.numerics.html#module-geomfum.numerics">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="geomfum.shape.html">geomfum.shape package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.shape.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.shape.convert.html">geomfum.shape.convert package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="geomfum.shape.convert.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.shape.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.shape.html#geomfum-shape-hierarchical-module">geomfum.shape.hierarchical module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.shape.html#geomfum-shape-mesh-module">geomfum.shape.mesh module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.shape.html#geomfum-shape-point-cloud-module">geomfum.shape.point_cloud module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.shape.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="geomfum.wrap.html">geomfum.wrap package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#geomfum-wrap-diffusionnet-module">geomfum.wrap.diffusionnet module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#geomfum-wrap-igl-module">geomfum.wrap.igl module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#geomfum-wrap-plotly-module">geomfum.wrap.plotly module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#geomfum-wrap-pointnet-module">geomfum.wrap.pointnet module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#geomfum-wrap-polyscope-module">geomfum.wrap.polyscope module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#geomfum-wrap-pot-module">geomfum.wrap.pot module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#geomfum-wrap-pp3d-module">geomfum.wrap.pp3d module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#geomfum-wrap-pyfm-module">geomfum.wrap.pyfm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#module-geomfum.wrap.pymeshlab">geomfum.wrap.pymeshlab module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.pymeshlab.BaseSampler"><code class="docutils literal notranslate"><span class="pre">BaseSampler</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.pymeshlab.BaseSampler.sample"><code class="docutils literal notranslate"><span class="pre">BaseSampler.sample()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.pymeshlab.PymeshlabPoissonSampler"><code class="docutils literal notranslate"><span class="pre">PymeshlabPoissonSampler</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.pymeshlab.PymeshlabPoissonSampler.sample"><code class="docutils literal notranslate"><span class="pre">PymeshlabPoissonSampler.sample()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#geomfum-wrap-pyrmt-module">geomfum.wrap.pyrmt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#geomfum-wrap-pyvista-module">geomfum.wrap.pyvista module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#geomfum-wrap-robust-module">geomfum.wrap.robust module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geomfum.wrap.html#module-geomfum.wrap">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.has_package"><code class="docutils literal notranslate"><span class="pre">has_package()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_face_divergence_operator"><code class="docutils literal notranslate"><span class="pre">register_face_divergence_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_face_orientation_operator"><code class="docutils literal notranslate"><span class="pre">register_face_orientation_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_face_valued_gradient"><code class="docutils literal notranslate"><span class="pre">register_face_valued_gradient()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_feature_extractor"><code class="docutils literal notranslate"><span class="pre">register_feature_extractor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_heat_distance_metric"><code class="docutils literal notranslate"><span class="pre">register_heat_distance_metric()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_heat_kernel_signature"><code class="docutils literal notranslate"><span class="pre">register_heat_kernel_signature()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_hierarchical_mesh"><code class="docutils literal notranslate"><span class="pre">register_hierarchical_mesh()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_landmark_heat_kernel_signature"><code class="docutils literal notranslate"><span class="pre">register_landmark_heat_kernel_signature()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_landmark_wave_kernel_signature"><code class="docutils literal notranslate"><span class="pre">register_landmark_wave_kernel_signature()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_laplacian_finder"><code class="docutils literal notranslate"><span class="pre">register_laplacian_finder()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_mesh_plotter"><code class="docutils literal notranslate"><span class="pre">register_mesh_plotter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_neighbor_finder"><code class="docutils literal notranslate"><span class="pre">register_neighbor_finder()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_point_cloud_plotter"><code class="docutils literal notranslate"><span class="pre">register_point_cloud_plotter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_poisson_sampler"><code class="docutils literal notranslate"><span class="pre">register_poisson_sampler()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="geomfum.wrap.html#geomfum.wrap.register_wave_kernel_signature"><code class="docutils literal notranslate"><span class="pre">register_wave_kernel_signature()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
+</section>
+<section id="geomfum-basis-module">
+<h2>geomfum.basis module<a class="headerlink" href="#geomfum-basis-module" title="Link to this heading">#</a></h2>
+</section>
+<section id="geomfum-convert-module">
+<h2>geomfum.convert module<a class="headerlink" href="#geomfum-convert-module" title="Link to this heading">#</a></h2>
+</section>
+<section id="geomfum-forward-functional-map-module">
+<h2>geomfum.forward_functional_map module<a class="headerlink" href="#geomfum-forward-functional-map-module" title="Link to this heading">#</a></h2>
+</section>
+<section id="geomfum-functional-map-module">
+<h2>geomfum.functional_map module<a class="headerlink" href="#geomfum-functional-map-module" title="Link to this heading">#</a></h2>
+</section>
+<section id="geomfum-io-module">
+<h2>geomfum.io module<a class="headerlink" href="#geomfum-io-module" title="Link to this heading">#</a></h2>
+</section>
+<section id="geomfum-laplacian-module">
+<h2>geomfum.laplacian module<a class="headerlink" href="#geomfum-laplacian-module" title="Link to this heading">#</a></h2>
+</section>
+<section id="geomfum-linalg-module">
+<h2>geomfum.linalg module<a class="headerlink" href="#geomfum-linalg-module" title="Link to this heading">#</a></h2>
+</section>
+<section id="module-geomfum.neural_adjoint_map">
+<span id="geomfum-neural-adjoint-map-module"></span><h2>geomfum.neural_adjoint_map module<a class="headerlink" href="#module-geomfum.neural_adjoint_map" title="Link to this heading">#</a></h2>
+<p>Neural Adjoint Maps (NAMs) for functional maps.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.neural_adjoint_map.MLP">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.neural_adjoint_map.</span></span><span class="sig-name descname"><span class="pre">MLP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">act</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">LeakyReLU(negative_slope=0.01)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/neural_adjoint_map.html#MLP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.neural_adjoint_map.MLP" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
+<p>A simple MLP (Multi-Layer Perceptron) module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_dim</strong> (<em>int</em>) – The dimension of the input data.</p></li>
+<li><p><strong>output_dim</strong> (<em>int</em>) – The dimension of the output data.</p></li>
+<li><p><strong>depth</strong> (<em>int</em>) – The number of layers in the MLP.</p></li>
+<li><p><strong>width</strong> (<em>int</em>) – The width of each layer in the MLP.</p></li>
+<li><p><strong>act</strong> (<em>torch.nn.Module</em>) – The activation function to be used in the MLP.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="geomfum.neural_adjoint_map.MLP.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/neural_adjoint_map.html#MLP.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.neural_adjoint_map.MLP.forward" title="Link to this definition">#</a></dt>
+<dd><p>Forward pass through the MLP.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.neural_adjoint_map.NeuralAdjointMap">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.neural_adjoint_map.</span></span><span class="sig-name descname"><span class="pre">NeuralAdjointMap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linear_module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_linear_module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/neural_adjoint_map.html#NeuralAdjointMap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.neural_adjoint_map.NeuralAdjointMap" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
+<p>Neural Adjoint Map (NAM) composed by a linear branch and a non-linear MLP branch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_dim</strong> (<em>int</em>) – The dimension of the input data.</p></li>
+<li><p><strong>output_dim</strong> (<em>int</em>) – The dimension of the output data. If None, it defaults to input_dim.</p></li>
+<li><p><strong>depth</strong> (<em>int</em>) – The number of layers in the MLP.</p></li>
+<li><p><strong>width</strong> (<em>int</em>) – The width of each layer in the MLP.</p></li>
+<li><p><strong>act</strong> (<em>torch.nn.Module</em>) – The activation function to be used in the MLP.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="geomfum.neural_adjoint_map.NeuralAdjointMap.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/neural_adjoint_map.html#NeuralAdjointMap.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.neural_adjoint_map.NeuralAdjointMap.forward" title="Link to this definition">#</a></dt>
+<dd><p>Forward pass through both the linear and non-linear modules.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="geomfum-operator-module">
+<h2>geomfum.operator module<a class="headerlink" href="#geomfum-operator-module" title="Link to this heading">#</a></h2>
+</section>
+<section id="module-geomfum.plot">
+<span id="geomfum-plot-module"></span><h2>geomfum.plot module<a class="headerlink" href="#module-geomfum.plot" title="Link to this heading">#</a></h2>
+<p>Plotting functions.</p>
+<p>In this file we define the plotting logic.
+Since each plotting library has its own method of plotting,
+we define general functions that works with any library implemented</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.plot.MeshPlotter">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.plot.</span></span><span class="sig-name descname"><span class="pre">MeshPlotter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/plot.html#MeshPlotter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.plot.MeshPlotter" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#geomfum.sample.WhichRegistryMixins" title="geomfum._registry.WhichRegistryMixins"><code class="xref py py-class docutils literal notranslate"><span class="pre">WhichRegistryMixins</span></code></a>, <a class="reference internal" href="#geomfum.plot.ShapePlotter" title="geomfum.plot.ShapePlotter"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShapePlotter</span></code></a></p>
+<p>Plotting object to display meshes.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.plot.MeshPlotterRegistry">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.plot.</span></span><span class="sig-name descname"><span class="pre">MeshPlotterRegistry</span></span><a class="reference internal" href="../_modules/geomfum/_registry.html#MeshPlotterRegistry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.plot.MeshPlotterRegistry" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Registry</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geomfum.plot.MeshPlotterRegistry.MAP">
+<span class="sig-name descname"><span class="pre">MAP</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'plotly':</span> <span class="pre">('PlotlyMeshPlotter',</span> <span class="pre">None),</span> <span class="pre">'polyscope':</span> <span class="pre">('PsMeshPlotter',</span> <span class="pre">None),</span> <span class="pre">'pyvista':</span> <span class="pre">('PvMeshPlotter',</span> <span class="pre">None)}</span></span><a class="headerlink" href="#geomfum.plot.MeshPlotterRegistry.MAP" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geomfum.plot.MeshPlotterRegistry.default">
+<span class="sig-name descname"><span class="pre">default</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'plotly'</span></span><a class="headerlink" href="#geomfum.plot.MeshPlotterRegistry.default" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.plot.PointCloudPlotter">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.plot.</span></span><span class="sig-name descname"><span class="pre">PointCloudPlotter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/plot.html#PointCloudPlotter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.plot.PointCloudPlotter" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#geomfum.sample.WhichRegistryMixins" title="geomfum._registry.WhichRegistryMixins"><code class="xref py py-class docutils literal notranslate"><span class="pre">WhichRegistryMixins</span></code></a>, <a class="reference internal" href="#geomfum.plot.ShapePlotter" title="geomfum.plot.ShapePlotter"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShapePlotter</span></code></a></p>
+<p>Plotting object to display point clouds.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.plot.PointCloudPlotterRegistry">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.plot.</span></span><span class="sig-name descname"><span class="pre">PointCloudPlotterRegistry</span></span><a class="reference internal" href="../_modules/geomfum/_registry.html#PointCloudPlotterRegistry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.plot.PointCloudPlotterRegistry" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Registry</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geomfum.plot.PointCloudPlotterRegistry.MAP">
+<span class="sig-name descname"><span class="pre">MAP</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'plotly':</span> <span class="pre">('PlotlyPointCloudPlotter',</span> <span class="pre">None),</span> <span class="pre">'polyscope':</span> <span class="pre">('PsPointCloudPlotter',</span> <span class="pre">None),</span> <span class="pre">'pyvista':</span> <span class="pre">('PvPointCloudPlotter',</span> <span class="pre">None)}</span></span><a class="headerlink" href="#geomfum.plot.PointCloudPlotterRegistry.MAP" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geomfum.plot.PointCloudPlotterRegistry.default">
+<span class="sig-name descname"><span class="pre">default</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'plotly'</span></span><a class="headerlink" href="#geomfum.plot.PointCloudPlotterRegistry.default" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.plot.ShapePlotter">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.plot.</span></span><span class="sig-name descname"><span class="pre">ShapePlotter</span></span><a class="reference internal" href="../_modules/geomfum/plot.html#ShapePlotter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.plot.ShapePlotter" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></a></p>
+<p>Plotting object.</p>
+<p>Primitive clas to plot meshes, pointclouds or specific useful informations
+(scalar functions, landmarks, etc..)</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="geomfum.plot.ShapePlotter.highlight_vertices">
+<span class="sig-name descname"><span class="pre">highlight_vertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/plot.html#ShapePlotter.highlight_vertices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.plot.ShapePlotter.highlight_vertices" title="Link to this definition">#</a></dt>
+<dd><p>Highlight vertices on mesh.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geomfum.plot.ShapePlotter.set_vertex_colors">
+<span class="sig-name descname"><span class="pre">set_vertex_colors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">colors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/plot.html#ShapePlotter.set_vertex_colors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.plot.ShapePlotter.set_vertex_colors" title="Link to this definition">#</a></dt>
+<dd><p>Set vertex colors on mesh.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geomfum.plot.ShapePlotter.set_vertex_scalars">
+<span class="sig-name descname"><span class="pre">set_vertex_scalars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scalars</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/plot.html#ShapePlotter.set_vertex_scalars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.plot.ShapePlotter.set_vertex_scalars" title="Link to this definition">#</a></dt>
+<dd><p>Set vertex scalars on mesh.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geomfum.plot.ShapePlotter.show">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/plot.html#ShapePlotter.show"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.plot.ShapePlotter.show" title="Link to this definition">#</a></dt>
+<dd><p>Display plot.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.plot.WhichRegistryMixins">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.plot.</span></span><span class="sig-name descname"><span class="pre">WhichRegistryMixins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/_registry.html#WhichRegistryMixins"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.plot.WhichRegistryMixins" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Mixin enabling registry-based instantiation via ‘which’ parameter.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="geomfum.plot.WhichRegistryMixins.from_registry">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_registry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">which</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/_registry.html#WhichRegistryMixins.from_registry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.plot.WhichRegistryMixins.from_registry" title="Link to this definition">#</a></dt>
+<dd><p>Create instance from registered implementation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>which</strong> (<em>str</em>) – A registered implementation.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>obj</strong> (<em>BaseHeatKernelSignature</em>) – Instantiated object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="geomfum-refine-module">
+<h2>geomfum.refine module<a class="headerlink" href="#geomfum-refine-module" title="Link to this heading">#</a></h2>
+</section>
+<section id="module-geomfum.sample">
+<span id="geomfum-sample-module"></span><h2>geomfum.sample module<a class="headerlink" href="#module-geomfum.sample" title="Link to this heading">#</a></h2>
+<p>Sampling methods. This module defines various sampling strategies for geometric shapes, including Poisson disk sampling and farthest point sampling to sample sets of point following geometric indications.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.sample.BaseSampler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.sample.</span></span><span class="sig-name descname"><span class="pre">BaseSampler</span></span><a class="reference internal" href="../_modules/geomfum/sample.html#BaseSampler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.sample.BaseSampler" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></a></p>
+<p>Abstract Sampler.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="geomfum.sample.BaseSampler.sample">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/sample.html#BaseSampler.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.sample.BaseSampler.sample" title="Link to this definition">#</a></dt>
+<dd><p>Sample shape.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.sample.FarthestPointSampler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.sample.</span></span><span class="sig-name descname"><span class="pre">FarthestPointSampler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_n_samples</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/sample.html#FarthestPointSampler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.sample.FarthestPointSampler" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#geomfum.sample.BaseSampler" title="geomfum.sample.BaseSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSampler</span></code></a></p>
+<p>Farthest point sampling.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>min_n_samples</strong> (<em>int</em>) – Minimum number of samples to target.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="geomfum.sample.FarthestPointSampler.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">first_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">points_pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/sample.html#FarthestPointSampler.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.sample.FarthestPointSampler.sample" title="Link to this definition">#</a></dt>
+<dd><p>Perform farthest point sampling on a mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>TriangleMesh</em>) – The mesh to sample points from.</p></li>
+<li><p><strong>first_point</strong> (<em>int, optional</em>) – Index of the initial point to start sampling from. If None, a random point is chosen.</p></li>
+<li><p><strong>points_pool</strong> (<em>array-like or int, optional</em>) – Pool of candidate points to sample from. If None, all vertices in the mesh are used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>samples</strong> (<em>array-like of shape (min_n_samples,)</em>) – Indices of sampled points.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.sample.NearestNeighbors">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.sample.</span></span><span class="sig-name descname"><span class="pre">NearestNeighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leaf_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'minkowski'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sklearn/neighbors/_unsupervised.html#NearestNeighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.sample.NearestNeighbors" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">KNeighborsMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">RadiusNeighborsMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">NeighborsBase</span></code></p>
+<p>Unsupervised learner for implementing neighbor searches.</p>
+<p>Read more in the <a class="reference external" href="https://scikit-learn.org/stable/modules/neighbors.html#unsupervised-neighbors" title="(in scikit-learn v1.8)"><span class="xref std std-ref">User Guide</span></a>.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">Added in version 0.9.</span></p>
+</div>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul>
+<li><p><strong>n_neighbors</strong> (<em>int, default=5</em>) – Number of neighbors to use by default for <code class="xref py py-meth docutils literal notranslate"><span class="pre">kneighbors()</span></code> queries.</p></li>
+<li><p><strong>radius</strong> (<em>float, default=1.0</em>) – Range of parameter space to use by default for <code class="xref py py-meth docutils literal notranslate"><span class="pre">radius_neighbors()</span></code>
+queries.</p></li>
+<li><p><strong>algorithm</strong> (<em>{‘auto’, ‘ball_tree’, ‘kd_tree’, ‘brute’}, default=’auto’</em>) – Algorithm used to compute the nearest neighbors:</p>
+<ul class="simple">
+<li><p>‘ball_tree’ will use <code class="xref py py-class docutils literal notranslate"><span class="pre">BallTree</span></code></p></li>
+<li><p>‘kd_tree’ will use <code class="xref py py-class docutils literal notranslate"><span class="pre">KDTree</span></code></p></li>
+<li><p>‘brute’ will use a brute-force search.</p></li>
+<li><p>‘auto’ will attempt to decide the most appropriate algorithm
+based on the values passed to <a class="reference internal" href="#geomfum.sample.NearestNeighbors.fit" title="geomfum.sample.NearestNeighbors.fit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></a> method.</p></li>
+</ul>
+<p>Note: fitting on sparse input will override the setting of
+this parameter, using brute force.</p>
+</li>
+<li><p><strong>leaf_size</strong> (<em>int, default=30</em>) – Leaf size passed to BallTree or KDTree.  This can affect the
+speed of the construction and query, as well as the memory
+required to store the tree.  The optimal value depends on the
+nature of the problem.</p></li>
+<li><p><strong>metric</strong> (<em>str or callable, default=’minkowski’</em>) – Metric to use for distance computation. Default is “minkowski”, which
+results in the standard Euclidean distance when p = 2. See the
+documentation of <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/spatial.distance.html">scipy.spatial.distance</a> and
+the metrics listed in
+<code class="xref py py-class docutils literal notranslate"><span class="pre">distance_metrics</span></code> for valid metric
+values.</p>
+<p>If metric is “precomputed”, X is assumed to be a distance matrix and
+must be square during fit. X may be a <a class="reference external" href="https://scikit-learn.org/stable/glossary.html#term-sparse-graph" title="(in scikit-learn v1.8)"><span class="xref std std-term">sparse graph</span></a>, in which
+case only “nonzero” elements may be considered neighbors.</p>
+<p>If metric is a callable function, it takes two arrays representing 1D
+vectors as inputs and must return one value indicating the distance
+between those vectors. This works for Scipy’s metrics, but is less
+efficient than passing the metric name as a string.</p>
+</li>
+<li><p><strong>p</strong> (<em>float (positive), default=2</em>) – Parameter for the Minkowski metric from
+sklearn.metrics.pairwise.pairwise_distances. When p = 1, this is
+equivalent to using manhattan_distance (l1), and euclidean_distance
+(l2) for p = 2. For arbitrary p, minkowski_distance (l_p) is used.</p></li>
+<li><p><strong>metric_params</strong> (<em>dict, default=None</em>) – Additional keyword arguments for the metric function.</p></li>
+<li><p><strong>n_jobs</strong> (<em>int, default=None</em>) – The number of parallel jobs to run for neighbors search.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> means 1 unless in a <a class="reference external" href="https://joblib.readthedocs.io/en/latest/generated/joblib.parallel_backend.html#joblib.parallel_backend" title="(in joblib v1.5.3)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">joblib.parallel_backend</span></code></a> context.
+<code class="docutils literal notranslate"><span class="pre">-1</span></code> means using all processors. See <a class="reference external" href="https://scikit-learn.org/stable/glossary.html#term-n_jobs" title="(in scikit-learn v1.8)"><span class="xref std std-term">Glossary</span></a>
+for more details.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geomfum.sample.NearestNeighbors.effective_metric_">
+<span class="sig-name descname"><span class="pre">effective_metric_</span></span><a class="headerlink" href="#geomfum.sample.NearestNeighbors.effective_metric_" title="Link to this definition">#</a></dt>
+<dd><p>Metric used to compute distances to neighbors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geomfum.sample.NearestNeighbors.effective_metric_params_">
+<span class="sig-name descname"><span class="pre">effective_metric_params_</span></span><a class="headerlink" href="#geomfum.sample.NearestNeighbors.effective_metric_params_" title="Link to this definition">#</a></dt>
+<dd><p>Parameters for the metric used to compute distances to neighbors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geomfum.sample.NearestNeighbors.n_features_in_">
+<span class="sig-name descname"><span class="pre">n_features_in_</span></span><a class="headerlink" href="#geomfum.sample.NearestNeighbors.n_features_in_" title="Link to this definition">#</a></dt>
+<dd><p>Number of features seen during <a class="reference external" href="https://scikit-learn.org/stable/glossary.html#term-fit" title="(in scikit-learn v1.8)"><span class="xref std std-term">fit</span></a>.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">Added in version 0.24.</span></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geomfum.sample.NearestNeighbors.feature_names_in_">
+<span class="sig-name descname"><span class="pre">feature_names_in_</span></span><a class="headerlink" href="#geomfum.sample.NearestNeighbors.feature_names_in_" title="Link to this definition">#</a></dt>
+<dd><p>Names of features seen during <a class="reference external" href="https://scikit-learn.org/stable/glossary.html#term-fit" title="(in scikit-learn v1.8)"><span class="xref std std-term">fit</span></a>. Defined only when <cite>X</cite>
+has feature names that are all strings.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">Added in version 1.0.</span></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (<cite>n_features_in_</cite>,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geomfum.sample.NearestNeighbors.n_samples_fit_">
+<span class="sig-name descname"><span class="pre">n_samples_fit_</span></span><a class="headerlink" href="#geomfum.sample.NearestNeighbors.n_samples_fit_" title="Link to this definition">#</a></dt>
+<dd><p>Number of samples in the fitted data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">KNeighborsClassifier</span></code></dt><dd><p>Classifier implementing the k-nearest neighbors vote.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">RadiusNeighborsClassifier</span></code></dt><dd><p>Classifier implementing a vote among neighbors within a given radius.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">KNeighborsRegressor</span></code></dt><dd><p>Regression based on k-nearest neighbors.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">RadiusNeighborsRegressor</span></code></dt><dd><p>Regression based on neighbors within a fixed radius.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">BallTree</span></code></dt><dd><p>Space partitioning data structure for organizing points in a multi-dimensional space, used for nearest neighbor search.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Notes</p>
+<p>See <a class="reference external" href="https://scikit-learn.org/stable/modules/neighbors.html#neighbors" title="(in scikit-learn v1.8)"><span class="xref std std-ref">Nearest Neighbors</span></a> in the online documentation
+for a discussion of the choice of <code class="docutils literal notranslate"><span class="pre">algorithm</span></code> and <code class="docutils literal notranslate"><span class="pre">leaf_size</span></code>.</p>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm">https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm</a></p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.neighbors</span> <span class="kn">import</span> <span class="n">NearestNeighbors</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">samples</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">neigh</span> <span class="o">=</span> <span class="n">NearestNeighbors</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">neigh</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+<span class="go">NearestNeighbors(...)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">neigh</span><span class="o">.</span><span class="n">kneighbors</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">]],</span> <span class="mi">2</span><span class="p">,</span> <span class="n">return_distance</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="go">array([[2, 0]]...)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nbrs</span> <span class="o">=</span> <span class="n">neigh</span><span class="o">.</span><span class="n">radius_neighbors</span><span class="p">(</span>
+<span class="gp">... </span>   <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">]],</span> <span class="mf">0.4</span><span class="p">,</span> <span class="n">return_distance</span><span class="o">=</span><span class="kc">False</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">nbrs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">array(2)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="geomfum.sample.NearestNeighbors.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sklearn/neighbors/_unsupervised.html#NearestNeighbors.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.sample.NearestNeighbors.fit" title="Link to this definition">#</a></dt>
+<dd><p>Fit the nearest neighbors estimator from the training dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>{array-like, sparse matrix} of shape (n_samples, n_features) or                 (n_samples, n_samples) if metric=’precomputed’</em>) – Training data.</p></li>
+<li><p><strong>y</strong> (<em>Ignored</em>) – Not used, present for API consistency by convention.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>self</strong> (<em>NearestNeighbors</em>) – The fitted nearest neighbors estimator.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.sample.PoissonSampler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.sample.</span></span><span class="sig-name descname"><span class="pre">PoissonSampler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/sample.html#PoissonSampler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.sample.PoissonSampler" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#geomfum.sample.WhichRegistryMixins" title="geomfum._registry.WhichRegistryMixins"><code class="xref py py-class docutils literal notranslate"><span class="pre">WhichRegistryMixins</span></code></a></p>
+<p>Poisson disk sampling.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.sample.PoissonSamplerRegistry">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.sample.</span></span><span class="sig-name descname"><span class="pre">PoissonSamplerRegistry</span></span><a class="reference internal" href="../_modules/geomfum/_registry.html#PoissonSamplerRegistry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.sample.PoissonSamplerRegistry" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Registry</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geomfum.sample.PoissonSamplerRegistry.MAP">
+<span class="sig-name descname"><span class="pre">MAP</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'pymeshlab':</span> <span class="pre">('PymeshlabPoissonSampler',</span> <span class="pre">None)}</span></span><a class="headerlink" href="#geomfum.sample.PoissonSamplerRegistry.MAP" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geomfum.sample.PoissonSamplerRegistry.default">
+<span class="sig-name descname"><span class="pre">default</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'pymeshlab'</span></span><a class="headerlink" href="#geomfum.sample.PoissonSamplerRegistry.default" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.sample.VertexProjectionSampler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.sample.</span></span><span class="sig-name descname"><span class="pre">VertexProjectionSampler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbor_finder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unique</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/sample.html#VertexProjectionSampler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.sample.VertexProjectionSampler" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#geomfum.sample.BaseSampler" title="geomfum.sample.BaseSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSampler</span></code></a></p>
+<p>Sample by projecting samples to the closest vertex.</p>
+<p>Uses nearest neighbor to get indices of sample coordinates
+resulting from another sampler.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min_n_samples</strong> (<em>int</em>) – Minimum number of samples to target.
+Ignored if <code class="docutils literal notranslate"><span class="pre">sampler</span></code> is not None.
+Not guaranteed if <code class="docutils literal notranslate"><span class="pre">unique</span></code> is True.</p></li>
+<li><p><strong>sampler</strong> (<em>BaseSampler</em>) – Coordinates sampler.</p></li>
+<li><p><strong>neighbor_finder</strong> (<em>sklearn.NearestNeighbors</em>) – Nearest neighbors finder.</p></li>
+<li><p><strong>unique</strong> (<em>bool</em>) – Whether to remove duplicates.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="geomfum.sample.VertexProjectionSampler.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/sample.html#VertexProjectionSampler.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.sample.VertexProjectionSampler.sample" title="Link to this definition">#</a></dt>
+<dd><p>Sample using Poisson disk sampling.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>shape</strong> (<em>Shape</em>) – Shape to be sampled.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>samples</strong> (<em>array-like, shape=[n_samples]</em>) – Vertex indices of samples.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="geomfum.sample.WhichRegistryMixins">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">geomfum.sample.</span></span><span class="sig-name descname"><span class="pre">WhichRegistryMixins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/_registry.html#WhichRegistryMixins"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.sample.WhichRegistryMixins" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Mixin enabling registry-based instantiation via ‘which’ parameter.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="geomfum.sample.WhichRegistryMixins.from_registry">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_registry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">which</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/geomfum/_registry.html#WhichRegistryMixins.from_registry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geomfum.sample.WhichRegistryMixins.from_registry" title="Link to this definition">#</a></dt>
+<dd><p>Create instance from registered implementation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>which</strong> (<em>str</em>) – A registered implementation.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>obj</strong> (<em>BaseHeatKernelSignature</em>) – Instantiated object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-geomfum">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-geomfum" title="Link to this heading">#</a></h2>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">API Reference</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="geomfum.dataset.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">geomfum.dataset package</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#subpackages">Subpackages</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum-basis-module">geomfum.basis module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum-convert-module">geomfum.convert module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum-forward-functional-map-module">geomfum.forward_functional_map module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum-functional-map-module">geomfum.functional_map module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum-io-module">geomfum.io module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum-laplacian-module">geomfum.laplacian module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum-linalg-module">geomfum.linalg module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-geomfum.neural_adjoint_map">geomfum.neural_adjoint_map module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.neural_adjoint_map.MLP"><code class="docutils literal notranslate"><span class="pre">MLP</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.neural_adjoint_map.MLP.forward"><code class="docutils literal notranslate"><span class="pre">MLP.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.neural_adjoint_map.NeuralAdjointMap"><code class="docutils literal notranslate"><span class="pre">NeuralAdjointMap</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.neural_adjoint_map.NeuralAdjointMap.forward"><code class="docutils literal notranslate"><span class="pre">NeuralAdjointMap.forward()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum-operator-module">geomfum.operator module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-geomfum.plot">geomfum.plot module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.MeshPlotter"><code class="docutils literal notranslate"><span class="pre">MeshPlotter</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.MeshPlotterRegistry"><code class="docutils literal notranslate"><span class="pre">MeshPlotterRegistry</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.MeshPlotterRegistry.MAP"><code class="docutils literal notranslate"><span class="pre">MeshPlotterRegistry.MAP</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.MeshPlotterRegistry.default"><code class="docutils literal notranslate"><span class="pre">MeshPlotterRegistry.default</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.PointCloudPlotter"><code class="docutils literal notranslate"><span class="pre">PointCloudPlotter</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.PointCloudPlotterRegistry"><code class="docutils literal notranslate"><span class="pre">PointCloudPlotterRegistry</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.PointCloudPlotterRegistry.MAP"><code class="docutils literal notranslate"><span class="pre">PointCloudPlotterRegistry.MAP</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.PointCloudPlotterRegistry.default"><code class="docutils literal notranslate"><span class="pre">PointCloudPlotterRegistry.default</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.ShapePlotter"><code class="docutils literal notranslate"><span class="pre">ShapePlotter</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.ShapePlotter.highlight_vertices"><code class="docutils literal notranslate"><span class="pre">ShapePlotter.highlight_vertices()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.ShapePlotter.set_vertex_colors"><code class="docutils literal notranslate"><span class="pre">ShapePlotter.set_vertex_colors()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.ShapePlotter.set_vertex_scalars"><code class="docutils literal notranslate"><span class="pre">ShapePlotter.set_vertex_scalars()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.ShapePlotter.show"><code class="docutils literal notranslate"><span class="pre">ShapePlotter.show()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.WhichRegistryMixins"><code class="docutils literal notranslate"><span class="pre">WhichRegistryMixins</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.plot.WhichRegistryMixins.from_registry"><code class="docutils literal notranslate"><span class="pre">WhichRegistryMixins.from_registry()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum-refine-module">geomfum.refine module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-geomfum.sample">geomfum.sample module</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.BaseSampler"><code class="docutils literal notranslate"><span class="pre">BaseSampler</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.BaseSampler.sample"><code class="docutils literal notranslate"><span class="pre">BaseSampler.sample()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.FarthestPointSampler"><code class="docutils literal notranslate"><span class="pre">FarthestPointSampler</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.FarthestPointSampler.sample"><code class="docutils literal notranslate"><span class="pre">FarthestPointSampler.sample()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.NearestNeighbors"><code class="docutils literal notranslate"><span class="pre">NearestNeighbors</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.NearestNeighbors.effective_metric_"><code class="docutils literal notranslate"><span class="pre">NearestNeighbors.effective_metric_</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.NearestNeighbors.effective_metric_params_"><code class="docutils literal notranslate"><span class="pre">NearestNeighbors.effective_metric_params_</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.NearestNeighbors.n_features_in_"><code class="docutils literal notranslate"><span class="pre">NearestNeighbors.n_features_in_</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.NearestNeighbors.feature_names_in_"><code class="docutils literal notranslate"><span class="pre">NearestNeighbors.feature_names_in_</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.NearestNeighbors.n_samples_fit_"><code class="docutils literal notranslate"><span class="pre">NearestNeighbors.n_samples_fit_</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.NearestNeighbors.fit"><code class="docutils literal notranslate"><span class="pre">NearestNeighbors.fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.PoissonSampler"><code class="docutils literal notranslate"><span class="pre">PoissonSampler</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.PoissonSamplerRegistry"><code class="docutils literal notranslate"><span class="pre">PoissonSamplerRegistry</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.PoissonSamplerRegistry.MAP"><code class="docutils literal notranslate"><span class="pre">PoissonSamplerRegistry.MAP</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.PoissonSamplerRegistry.default"><code class="docutils literal notranslate"><span class="pre">PoissonSamplerRegistry.default</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.VertexProjectionSampler"><code class="docutils literal notranslate"><span class="pre">VertexProjectionSampler</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.VertexProjectionSampler.sample"><code class="docutils literal notranslate"><span class="pre">VertexProjectionSampler.sample()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.WhichRegistryMixins"><code class="docutils literal notranslate"><span class="pre">WhichRegistryMixins</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#geomfum.sample.WhichRegistryMixins.from_registry"><code class="docutils literal notranslate"><span class="pre">WhichRegistryMixins.from_registry()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-geomfum">Module contents</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/geomfum.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, GeomFuM contributors.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

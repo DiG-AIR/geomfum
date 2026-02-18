@@ -1,5 +1,6 @@
 """pyRMT wrapper."""
 
+import gsops.backend as gs
 import numpy as np
 from PyRMT import RMTMesh
 
@@ -40,16 +41,20 @@ class PyrmtHierarchicalMesh(HierarchicalShape):
         super().__init__(low=low, high=mesh)
 
     def _remesh(self, mesh, min_n_samples):
-        vertices = mesh.vertices
-        faces = mesh.faces
+        vertices = gs.to_numpy(mesh.vertices)
+        faces = gs.to_numpy(mesh.faces)
+
+        if vertices.dtype != np.float64:
+            vertices = vertices.astype(np.float64)
+
         if not vertices.flags.f_contiguous:
-            vertices = np.asfortranarray(vertices)
+            vertices = np.asfortranarray(vertices, dtype=np.float64)
 
         if faces.dtype != np.int32:
             faces = faces.astype(np.int32)
 
         if not faces.flags.f_contiguous:
-            faces = np.asfortranarray(faces)
+            faces = np.asfortranarray(faces, dtype=np.int32)
 
         rhigh = RMTMesh(vertices, faces)
         rhigh.make_manifold()
@@ -61,7 +66,7 @@ class PyrmtHierarchicalMesh(HierarchicalShape):
         self._rlow = rlow
         self._baryc_map = rlow.baryc_map(vertices)
 
-        return TriangleMesh(np.array(rlow.vertices), np.array(rlow.triangles))
+        return TriangleMesh(gs.array(rlow.vertices), gs.array(rlow.triangles))
 
     def scalar_low_high(self, scalar):
         """Transfer scalar from low-resolution to high.
@@ -76,4 +81,4 @@ class PyrmtHierarchicalMesh(HierarchicalShape):
         high_scalar : array-like, shape=[..., high.n_vertices]
             Scalar map on the high-resolution shape.
         """
-        return la.matvecmul(self._baryc_map, scalar)
+        return gs.asarray(la.matvecmul(self._baryc_map, scalar))

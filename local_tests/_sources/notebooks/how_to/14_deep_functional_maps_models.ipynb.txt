@@ -1,0 +1,163 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "1268991a",
+   "metadata": {},
+   "source": [
+    "# How to use a Functional Map Model"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a8ea0eef",
+   "metadata": {},
+   "source": [
+    "Here we show how to instantiate a deep functional map model. We introduce this notion as a model that can compute, given a pair of shapes, a functional maps ina  differentiable manner, using learned descriptors."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "b2d92f9d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from geomfum.dataset import NotebooksDataset\n",
+    "from geomfum.descriptor.learned import FeatureExtractor\n",
+    "from geomfum.forward_functional_map import ForwardFunctionalMap\n",
+    "from geomfum.learning.models import FMNet\n",
+    "from geomfum.shape import TriangleMesh\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "d6dd1fee",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "INFO: Data has already been downloaded... using cached file ('/home/ubuntu/.geomfum/data/cat-00.off').\n",
+      "/home/ubuntu/giulio_vigano/geomfum_proj/venv/lib/python3.12/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html\n",
+      "  from .autonotebook import tqdm as notebook_tqdm\n",
+      "INFO: Data has already been downloaded... using cached file ('/home/ubuntu/.geomfum/data/lion-00.off').\n"
+     ]
+    }
+   ],
+   "source": [
+    "dataset = NotebooksDataset()\n",
+    "\n",
+    "mesh_a = TriangleMesh.from_file(dataset.get_filename(\"cat-00\"))\n",
+    "mesh_b = TriangleMesh.from_file(dataset.get_filename(\"lion-00\"))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "ea391a75",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "mesh_a.laplacian.find_spectrum(spectrum_size=100, set_as_basis=True)\n",
+    "mesh_b.laplacian.find_spectrum(spectrum_size=100, set_as_basis=True)\n",
+    "\n",
+    "mesh_a.basis.use_k = 20\n",
+    "mesh_b.basis.use_k = 20\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "e8c2e0ab",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(20, 20)"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "import torch\n",
+    "\n",
+    "functional_map_model = FMNet(\n",
+    "    feature_extractor=FeatureExtractor.from_registry(which=\"diffusionnet\")\n",
+    ")\n",
+    "\n",
+    "with torch.no_grad():\n",
+    "    output = functional_map_model(mesh_a, mesh_b, as_dict=True)\n",
+    "fmap12, fmap21 = output[\"fmap12\"], output[\"fmap21\"]\n",
+    "\n",
+    "fmap12.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8f233bef",
+   "metadata": {},
+   "source": [
+    "We can select specific modules for our network"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "642b6253",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(20, 20)"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "fmap_module = ForwardFunctionalMap(1000, 1, False)\n",
+    "\n",
+    "feature_extractor = FeatureExtractor.from_registry(which=\"diffusionnet\")\n",
+    "\n",
+    "functional_map_model = FMNet(\n",
+    "    feature_extractor=feature_extractor, fmap_module=fmap_module\n",
+    ")\n",
+    "with torch.no_grad():\n",
+    "    fmap12, fmap21 = functional_map_model(mesh_a, mesh_b, as_dict=False)\n",
+    "\n",
+    "fmap12.shape"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "venv",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.12.3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

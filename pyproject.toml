@@ -3,7 +3,13 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-authors = [{ name = "Luís F. Pereira", email = "luisfgper@gmail.com" }]
+authors = [
+    { name = "Giulio Viganò", email = "g.vigano36@campus.unimib.it" },
+    { name = "Giorgio Longari", email = "giorgio.longari@unimib.it" },
+    { name = "Luís F. Pereira", email = "luisfpereira@ucsb.edu" },
+    { name = "Nina Miolane", email = "ninamiolane@ucsb.edu" },
+    { name = "Simone Melzi", email = "simone.melzi@unimib.it" }
+]
 name = "geomfum"
 dynamic = ["version"]
 readme = "README.rst"
@@ -18,9 +24,18 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 requires-python = ">= 3.9"
-dependencies = ["numpy", "scipy", "scikit-learn", "meshio"]
+dependencies = [
+    "numpy",
+    "scipy",
+    "scikit-learn",
+    "meshio",
+    "pyfmaps",
+    "torch",
+    "gsops",
+]
 
 [project.optional-dependencies]
+<<<<<<< HEAD
 network = ["networkx"]
 wrap = [
     "pyfmaps",
@@ -30,9 +45,30 @@ wrap = [
 ]
 all = ["geomfum[network,wrap]"]
 test = ["pytest", "geomfum[all]"]
+=======
+lapl = ["robust-laplacian", "libigl"]
+metric = ["networkx", "potpourri3d"]
+sampling = ["pymeshlab"]
+rematching = [
+    "Rematching@git+https://github.com/filthynobleman/rematching.git@python-binding",
+]
+sinkhorn = ["POT"]
+opt = ["geomfum[lapl,metric,sampling,rematching,sinkhorn]"]
+test-scripts = ["nbformat", "nbconvert", "ipykernel", "ipython", "pyvista", "plotly"]
+test = [
+    "pytest",
+    "geomstats@git+https://github.com/geomstats/geomstats.git@main",
+    "polpo@git+https://github.com/geometric-intelligence/polpo.git@main",
+    "geomfum[opt,test-scripts,plotting-all]",
+]
+plotly = ["plotly", "nbformat"]
+pyvista = ["pyvista", "trame"]
+polyscope = ["polyscope"]
+plotting-all = ["geomfum[plotly,pyvista,polyscope]"]
+>>>>>>> main
 
 [project.urls]
-repository = "http://github.com/luisfpereira/geomfum"
+repository = "http://github.com/3diglab/geomfum"
 
 [tool.setuptools.dynamic]
 version = { attr = "geomfum.__version__" }
@@ -52,6 +88,7 @@ markers = [
     "mathprop: mathematical properties tests.",
     "slow: for slow tests.",
     "redundant: redundant test.",
+    "rematching: requires PyRMT.",
 ]
 
 [tool.ruff]

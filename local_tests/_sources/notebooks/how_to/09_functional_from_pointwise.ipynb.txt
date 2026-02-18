@@ -1,0 +1,252 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# How to compute a functional map from a pointwise map?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import geomstats.backend as gs\n",
+    "import numpy as np\n",
+    "\n",
+    "from geomfum.convert import FmFromP2pBijectiveConverter, FmFromP2pConverter\n",
+    "from geomfum.dataset import NotebooksDataset\n",
+    "from geomfum.shape import TriangleMesh"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "[Load meshes](00_load_mesh_from_file.ipynb)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(7207, 5000)"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dataset = NotebooksDataset()\n",
+    "\n",
+    "mesh_a = TriangleMesh.from_file(dataset.get_filename(\"cat-00\"))\n",
+    "mesh_b = TriangleMesh.from_file(dataset.get_filename(\"lion-00\"))\n",
+    "\n",
+    "mesh_a.n_vertices, mesh_b.n_vertices"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "[Set Laplace eigenbasis](./02_mesh_laplacian_spectrum.ipynb) for each mesh."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "mesh_a.laplacian.find_spectrum(spectrum_size=6, set_as_basis=True)\n",
+    "mesh_b.laplacian.find_spectrum(spectrum_size=6, set_as_basis=True)\n",
+    "\n",
+    "mesh_b.basis.use_k = 5"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Assume we have a [valid pointwise map](./10_pointwise_from_functional.ipynb) between `mesh_a` and `mesh_b` (which for demonstration purposes, we instantiate randomly)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(5000,)"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "p2p_12 = gs.from_numpy(np.random.choice(mesh_a.n_vertices, size=mesh_b.n_vertices))\n",
+    "\n",
+    "p2p_12.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Compute functional map."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(5, 6)"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "fm_converter = FmFromP2pConverter()\n",
+    "\n",
+    "fmap_matrix = fm_converter(p2p_12, mesh_a.basis, mesh_b.basis)\n",
+    "\n",
+    "fmap_matrix.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The `pseudo_inverse` can be used instead."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(5, 6)"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "fm_converter.pseudo_inverse = True\n",
+    "\n",
+    "fmap_matrix = fm_converter(p2p_12, mesh_a.basis, mesh_b.basis)\n",
+    "\n",
+    "fmap_matrix.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The bijective method can be used using a different converter."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(7207,)"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "p2p_21 = gs.from_numpy(np.random.choice(mesh_b.n_vertices, size=mesh_a.n_vertices))\n",
+    "\n",
+    "p2p_21.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(5, 6)"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "fm_bij_converter = FmFromP2pBijectiveConverter()\n",
+    "\n",
+    "fmap_matrix = fm_bij_converter(p2p_21, mesh_a.basis, mesh_b.basis)\n",
+    "\n",
+    "fmap_matrix.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Further reading\n",
+    "\n",
+    "* [How to compute a pointwise map from a functional map?](./10_pointwise_from_functional.ipynb)\n",
+    "\n",
+    "* [How to compute a functional map?](./07_functional_map.ipynb)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "py12",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.12.3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}

@@ -1,8 +1,9 @@
-"""igl wrapper."""
+"""Igl wrapper."""
 
+import gsops.backend as gs
 import igl
 
-from geomfum.laplacian._base import BaseLaplacianFinder
+from geomfum.laplacian import BaseLaplacianFinder
 
 
 class IglMeshLaplacianFinder(BaseLaplacianFinder):
@@ -18,12 +19,14 @@ class IglMeshLaplacianFinder(BaseLaplacianFinder):
 
         Returns
         -------
-        stiffness_matrix : scipy.sparse.csc_matrix, shape=[n_vertices, n_vertices]
+        stiffness_matrix : sparse.csc_matrix, shape=[n_vertices, n_vertices]
             Stiffness matrix.
-        mass_matrix : scipy.sparse.csc_matrix, shape=[n_vertices, n_vertices]
+        mass_matrix : sparse.csc_matrix, shape=[n_vertices, n_vertices]
             Diagonal lumped mass matrix.
         """
         return (
-            -igl.cotmatrix(shape.vertices, shape.faces),
-            igl.massmatrix(shape.vertices, shape.faces, igl.MASSMATRIX_TYPE_VORONOI),
+            gs.sparse.from_scipy_csc(-igl.cotmatrix(shape.vertices, shape.faces)),
+            gs.sparse.from_scipy_csc(
+                igl.massmatrix(shape.vertices, shape.faces, igl.MASSMATRIX_TYPE_VORONOI)
+            ),
         )

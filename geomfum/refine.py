@@ -3,10 +3,17 @@
 import abc
 import logging
 
-import numpy as np
+import gsops.backend as gs
 import scipy
 
-from geomfum.convert import FmFromP2pConverter, P2pFromFmConverter
+from geomfum.convert import (
+    FmFromP2pBijectiveConverter,
+    FmFromP2pConverter,
+    NamFromP2pConverter,
+    P2pFromFmConverter,
+    P2pFromNamConverter,
+    SinkhornP2pFromFmConverter,
+)
 
 
 class Refiner(abc.ABC):
@@ -96,15 +103,62 @@ class OrthogonalRefiner(Refiner):
         U, _, VT = scipy.linalg.svd(fmap_matrix)
 
         if k1 != k2 or not self.flip_neg_det:
-            return U @ np.eye(k2, k1) @ VT
+            return gs.asarray(U @ gs.to_numpy(gs.eye(k2, k1)) @ VT)
 
-        opt_rot = np.matmul(U, VT)
-        if np.linalg.det(opt_rot) < 0.0:
-            diag_sign = np.diag(np.ones(VT.shape[0]))
+        opt_rot = gs.asarray(gs.matmul(U, VT))
+        if gs.linalg.det(opt_rot) < 0.0:
+            diag_sign = gs.diag(gs.ones(VT.shape[0]))
             diag_sign[-1, -1] = -1
-            opt_rot = np.matmul(U, np.matmul(diag_sign, VT))
+            opt_rot = gs.matmul(U, gs.matmul(diag_sign, VT))
 
         return opt_rot
+
+
+class ProperRefiner(Refiner):
+    """Refinement projecting the functional map to the proper functional map space.
+
+    Parameters
+    ----------
+    p2p_from_fm_converter : P2pFromFmConverter
+        Pointwise map from functional map.
+    fm_from_p2p_converter : FmFromP2pConverter
+        Functional map from pointwise map.
+    """
+
+    def __init__(
+        self,
+        p2p_from_fm_converter=None,
+        fm_from_p2p_converter=None,
+    ):
+        super().__init__()
+        if p2p_from_fm_converter is None:
+            p2p_from_fm_converter = P2pFromFmConverter()
+
+        if fm_from_p2p_converter is None:
+            fm_from_p2p_converter = FmFromP2pConverter()
+
+        self.p2p_from_fm_converter = p2p_from_fm_converter
+        self.fm_from_p2p_converter = fm_from_p2p_converter
+
+    def __call__(self, fmap_matrix, basis_a, basis_b):
+        """Apply refiner.
+
+        Parameters
+        ----------
+        fmap_matrix : array-like, shape=[spectrum_size_b, spectrum_size_a]
+            Functional map matrix.
+        basis_a : Eigenbasis.
+            Basis.
+        basis_b: Eigenbasis.
+            Basis.
+
+        Returns
+        -------
+        fmap_matrix : array-like, shape=[spectrum_size_b, spectrum_size_a]
+            Refined functional map matrix.
+        """
+        p2p_21 = self.p2p_from_fm_converter(fmap_matrix, basis_a, basis_b)
+        return self.fm_from_p2p_converter(p2p_21, basis_a, basis_b)
 
 
 class IterativeRefiner(Refiner):
@@ -247,14 +301,12 @@ class IterativeRefiner(Refiner):
             if msg:
                 raise ValueError(f"Not enough eigenvectors on {', '.join(msg)}.")
 
-        nit = self.nit
-
         for _ in range(nit):
             new_fmap_matrix = self.iter(fmap_matrix, basis_a, basis_b)
 
             if (
                 self.atol is not None
-                and np.amax(np.abs(new_fmap_matrix - fmap_matrix)) < self.atol
+                and gs.amax(gs.abs(new_fmap_matrix - fmap_matrix)) < self.atol
             ):
                 break
 
@@ -342,4 +394,97 @@ class ZoomOut(IterativeRefiner):
             p2p_from_fm_converter=p2p_from_fm_converter,
             fm_from_p2p_converter=fm_from_p2p_converter,
             iter_refiner=None,
+        )
+
+
+class AdjointBijectiveZoomOut(ZoomOut):
+    """Adjoint bijective zoomout algorithm.
+
+    Parameters
+    ----------
+    nit : int
+        Number of iterations.
+    step : int or tuple[2, int]
+        How much to increase each basis per iteration.
+
+    References
+    ----------
+    :cite:`VM2024`
+    """
+
+    def __init__(
+        self,
+        nit=10,
+        step=1,
+    ):
+        super().__init__(
+            nit=nit,
+            step=step,
+            p2p_from_fm_converter=P2pFromFmConverter(adjoint=True, bijective=True),
+            fm_from_p2p_converter=FmFromP2pBijectiveConverter(),
+        )
+
+
+class FastSinkhornFilters(ZoomOut):
+    """Fast Sinkhorn filters.
+
+    Parameters
+    ----------
+    nit : int
+        Number of iterations.
+    step : int or tuple[2, int]
+        How much to increase each basis per iteration.
+    neighbor_finder : SinkhornKNeighborsFinder
+        Nearest neighbor finder.
+
+    References
+    ----------
+    .. [PRMWO2021] Gautam Pai, Jing Ren, Simone Melzi, Peter Wonka, and Maks Ovsjanikov.
+        "Fast Sinkhorn Filters: Using Matrix Scaling for Non-Rigid Shape Correspondence
+        with Functional Maps." Proceedings of the IEEE/CVF Conference on Computer Vision
+        and Pattern Recognition (CVPR), 2021, pp. 11956-11965.
+        https://hal.science/hal-03184936/document
+    """
+
+    def __init__(
+        self,
+        nit=10,
+        step=1,
+        neighbor_finder=None,
+    ):
+        super().__init__(
+            nit=nit,
+            step=step,
+            p2p_from_fm_converter=SinkhornP2pFromFmConverter(neighbor_finder),
+            fm_from_p2p_converter=FmFromP2pConverter(),
+        )
+
+
+class NeuralZoomOut(ZoomOut):
+    """Neural zoomout algorithm.
+
+    Parameters
+    ----------
+    nit : int
+        Number of iterations.
+    step : int or tuple[2, int]
+        How much to increase each basis per iteration.
+
+    References
+    ----------
+    .. [VOM2025] Giulio Viganò, Maks Ovsjanikov, Simone Melzi.
+        "NAM: Neural Adjoint Maps for refining shape correspondences".
+    """
+
+    def __init__(
+        self,
+        nit=10,
+        step=1,
+        device="cpu",
+    ):
+        super().__init__(
+            nit=nit,
+            step=step,
+            p2p_from_fm_converter=P2pFromNamConverter(),
+            fm_from_p2p_converter=NamFromP2pConverter(device=device),
         )
