@@ -5,7 +5,7 @@ import abc
 import gsops.backend as gs
 
 import geomfum.wrap as _wrap  # noqa (for register)
-from geomfum._registry import LaplacianFinderRegistry, MeshWhichRegistryMixins
+from geomfum._registry import LaplacianFinderRegistry, ShapeWhichRegistryMixins
 from geomfum.basis import LaplaceEigenBasis
 from geomfum.numerics.eig import ScipyEigsh
 
@@ -31,7 +31,7 @@ class BaseLaplacianFinder(abc.ABC):
         """
 
 
-class LaplacianFinder(MeshWhichRegistryMixins, BaseLaplacianFinder):
+class LaplacianFinder(ShapeWhichRegistryMixins, BaseLaplacianFinder):
     """Algorithm to find the Laplacian."""
 
     _Registry = LaplacianFinderRegistry

@@ -249,8 +249,8 @@ class WhichRegistryMixins:
         return instantiator(*args, **kwargs)
 
 
-class MeshWhichRegistryMixins:
-    """Mixin for registry-based instantiation with mesh/point cloud distinction."""
+class ShapeWhichRegistryMixins:
+    """Mixin for registry-based instantiation with shape type distinction."""
 
     def __init__(self, *args, **kwargs):
         # TODO: has to be improved
@@ -259,13 +259,13 @@ class MeshWhichRegistryMixins:
         super().__init__(*args, **kwargs)
 
     @classmethod
-    def from_registry(cls, *args, mesh=True, which=None, **kwargs):
+    def from_registry(cls, *args, shape_type="mesh", which=None, **kwargs):
         """Create instance from registered implementation based on shape type.
 
         Parameters
         ----------
-        mesh : bool
-            Whether a mesh or point cloud.
+        shape_type : str
+            Type of shape (e.g. ``"mesh"``, ``"pointcloud"``).
         which : str
             A registered implementation.
 
@@ -274,7 +274,7 @@ class MeshWhichRegistryMixins:
         obj : Obj
             An instantiated object.
         """
-        instantiator = cls._Registry.get(mesh, which)
+        instantiator = cls._Registry.get(shape_type, which)
         if instantiator is None:
             obj = cls.__new__(cls)
             obj.__init__(*args, **kwargs)
@@ -295,8 +295,8 @@ class _PointSetLaplacianFinderRegistry(Registry):
 
 class LaplacianFinderRegistry(NestedRegistry):
     Registries = {
-        True: _MeshLaplacianFinderRegistry,
-        False: _PointSetLaplacianFinderRegistry,
+        "mesh": _MeshLaplacianFinderRegistry,
+        "pointcloud": _PointSetLaplacianFinderRegistry,
     }
 
 
@@ -354,14 +354,6 @@ class NeighborFinderRegistry(Registry):
     MAP = {}
 
 
-class MeshPlotterRegistry(Registry):
-    MAP = {}
-
-
-class PointCloudPlotterRegistry(Registry):
-    MAP = {}
-
-
 class _MeshHeatDistanceMetricRegistry(Registry):
     has_internal = False
     MAP = {}
@@ -374,9 +366,13 @@ class _PointSetHeatDistanceMetricRegistry(Registry):
 
 class HeatDistanceMetricRegistry(NestedRegistry):
     Registries = {
-        True: _MeshHeatDistanceMetricRegistry,
-        False: _PointSetHeatDistanceMetricRegistry,
+        "mesh": _MeshHeatDistanceMetricRegistry,
+        "pointcloud": _PointSetHeatDistanceMetricRegistry,
     }
+
+class PreciseGeodesicDistanceMetricRegistry(Registry):
+    has_internal = False
+    MAP = {}
 
 
 def _create_register_funcs(module):

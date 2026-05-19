@@ -33,7 +33,7 @@ class TriangleMesh(Shape):
         vertices,
         faces,
     ):
-        super().__init__(is_mesh=True)
+        super().__init__(shape_type="mesh")
         self.vertices = gs.asarray(vertices)
         self.faces = gs.asarray(faces)
 

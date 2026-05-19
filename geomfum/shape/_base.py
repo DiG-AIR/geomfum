@@ -13,12 +13,12 @@ class Shape(abc.ABC):
 
     Parameters
     ----------
-    is_mesh : bool
-        Whether the shape is a mesh (True) or point cloud (False).
+    shape_type : str
+        Type of shape (e.g. ``"mesh"``, ``"pointcloud"``).
     """
 
-    def __init__(self, is_mesh):
-        self.is_mesh = is_mesh
+    def __init__(self, shape_type):
+        self.shape_type = shape_type
 
         self._basis = None
         self.laplacian = Laplacian(self)

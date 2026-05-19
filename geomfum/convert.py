@@ -192,7 +192,7 @@ class SoftmaxNeighborFinder(BaseNeighborFinder, nn.Module):
         P = self.softmax_matrix(X, Y)
         # Get the indices of the top-k (self.n_neighbors) highest values for each row
         indices = torch.topk(P, self.n_neighbors, dim=-1)[1]
-        return indices
+        return gs.to_device(indices, "cpu")
 
     def softmax_matrix(self, X, Y):
         """Compute the permutation matrix P as a softmax of the similarity.

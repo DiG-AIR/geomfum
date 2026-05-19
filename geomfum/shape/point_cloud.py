@@ -23,7 +23,7 @@ class PointCloud(Shape):
     """
 
     def __init__(self, vertices):
-        super().__init__(is_mesh=False)
+        super().__init__(shape_type="pointcloud")
         self.vertices = gs.asarray(vertices)
 
         self.n_neighbors = 30

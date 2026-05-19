@@ -4,7 +4,7 @@ import abc
 
 import gsops.backend as gs
 
-from geomfum._registry import HeatDistanceMetricRegistry, MeshWhichRegistryMixins
+from geomfum._registry import HeatDistanceMetricRegistry, ShapeWhichRegistryMixins
 
 
 class Metric(abc.ABC):
@@ -135,7 +135,7 @@ class VertexEuclideanMetric(FinitePointSetMetric):
         return self.dist_from_source(gs.arange(self._shape.n_vertices))[0]
 
 
-class HeatDistanceMetric(MeshWhichRegistryMixins):
+class HeatDistanceMetric(ShapeWhichRegistryMixins):
     """Geodesic distance approximation using the heat method.
 
     References

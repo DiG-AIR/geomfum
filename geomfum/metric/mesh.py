@@ -4,6 +4,7 @@ import gsops.backend as gs
 import networkx as nx
 from scipy.sparse.csgraph import shortest_path
 
+from geomfum._registry import PreciseGeodesicDistanceMetricRegistry, WhichRegistryMixins
 from geomfum.numerics.graph import single_source_partial_dijkstra_path_length
 
 from ._base import FinitePointSetMetric, VertexEuclideanMetric, _SingleDispatchMixins
@@ -248,3 +249,15 @@ class ScipyGraphShortestPathMetric(_ScipyShortestPathMixins, FinitePointSetMetri
             indices=source_point,
         )
         return gs.array(list(dist)), gs.arange(len(dist))
+
+
+class PreciseGeodesicDistanceMetric(WhichRegistryMixins):
+    """Precise geodesic distance metric on mesh.
+
+    Parameters
+    ----------
+    shape : Shape
+        Shape.
+    """
+
+    _Registry = PreciseGeodesicDistanceMetricRegistry

@@ -42,7 +42,7 @@ rematching = [
     "Rematching@git+https://github.com/filthynobleman/rematching.git@python-binding",
 ]
 sinkhorn = ["POT"]
-opt = ["geomfum[lapl,metric,sampling,rematching,sinkhorn]"]
+opt = ["geomfum[lapl,metric,sampling,sinkhorn]"]
 test-scripts = ["nbformat", "nbconvert", "ipykernel", "ipython", "pyvista", "plotly"]
 test = [
     "pytest",

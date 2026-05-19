@@ -141,7 +141,7 @@ class Laplacian(FunctionalOperator):
 
         if laplacian_finder is None:
             laplacian_finder = LaplacianFinder.from_registry(
-                mesh=self._shape.is_mesh, which="robust"
+                shape_type=self._shape.shape_type, which="robust"
             )
 
         self._stiffness_matrix, self._mass_matrix = laplacian_finder(self._shape)
