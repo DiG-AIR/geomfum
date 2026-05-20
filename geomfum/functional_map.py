@@ -5,6 +5,7 @@ import abc
 import gsops.backend as gs
 
 import geomfum.linalg as la
+from geomfum.numerics.optimization import ScipyMinimize
 
 
 class WeightedFactor(abc.ABC):
@@ -422,3 +423,238 @@ class FactorSum(WeightedFactor):
         return self.weight * gs.sum(
             gs.stack([factor.gradient(fmap_matrix) for factor in self.factors]), axis=0
         )
+
+
+class FactorBuilder(abc.ABC):
+    """Abstract base class for factor builders."""
+
+    def __init__(self, weight=1.0):
+        self.weight = weight
+
+    @abc.abstractmethod
+    def build(self, basis_a, basis_b, descr_a, descr_b):
+        """Build factor from shape data.
+
+        Parameters
+        ----------
+        basis_a : LaplaceEigenBasis
+            Basis of source shape.
+        basis_b : LaplaceEigenBasis
+            Basis of target shape.
+        descr_a : array-like, shape=[..., n_vertices_a]
+            Descriptors on source shape.
+        descr_b : array-like, shape=[..., n_vertices_b]
+            Descriptors on target shape.
+
+        Returns
+        -------
+        factor : WeightedFactor
+        """
+
+
+class SDPFactorBuilder(FactorBuilder):
+    """Builder for SpectralDescriptorPreservation factor.
+
+    Parameters
+    ----------
+    weight : float
+        Weight of the factor.
+    """
+
+    def __init__(self, weight=1.0):
+        super(SDPFactorBuilder, self).__init__(weight=weight)
+
+    def build(self, basis_a, basis_b, descr_a, descr_b):
+        """Build SpectralDescriptorPreservation from shape data.
+
+        Parameters
+        ----------
+        basis_a : LaplaceEigenBasis
+            Basis of source shape.
+        basis_b : LaplaceEigenBasis
+            Basis of target shape.
+        descr_a : array-like, shape=[..., n_vertices_a]
+            Descriptors on source shape.
+        descr_b : array-like, shape=[..., n_vertices_b]
+            Descriptors on target shape.
+
+        Returns
+        -------
+        factor : SpectralDescriptorPreservation
+        """
+        return SpectralDescriptorPreservation(
+            basis_a.project(descr_a),
+            basis_b.project(descr_b),
+            weight=self.weight,
+        )
+
+
+class LBCFactorBuilder(FactorBuilder):
+    """Builder for LBCommutativityEnforcing factor.
+
+    Parameters
+    ----------
+    weight : float
+        Weight of the factor.
+    """
+
+    def __init__(self, weight=1e-2):
+        super(LBCFactorBuilder, self).__init__(weight=weight)
+
+    def build(self, basis_a, basis_b, descr_a, descr_b):
+        """Build LBCommutativityEnforcing from bases.
+
+        Parameters
+        ----------
+        basis_a : LaplaceEigenBasis
+            Basis of source shape.
+        basis_b : LaplaceEigenBasis
+            Basis of target shape.
+        descr_a : array-like
+            Descriptors on source shape (ignored, for uniform interface).
+        descr_b : array-like
+            Descriptors on target shape (ignored, for uniform interface).
+
+        Returns
+        -------
+        factor : LBCommutativityEnforcing
+        """
+        return LBCommutativityEnforcing.from_bases(basis_a, basis_b, weight=self.weight)
+
+
+class MultFactorBuilder(FactorBuilder):
+    """Builder for multiplication OperatorCommutativityEnforcing factor.
+
+    Parameters
+    ----------
+    weight : float
+        Weight of the factor.
+    """
+
+    def __init__(self, weight=1e-1):
+        super(MultFactorBuilder, self).__init__(weight=weight)
+
+    def build(self, basis_a, basis_b, descr_a, descr_b):
+        """Build OperatorCommutativityEnforcing from multiplication operators.
+
+        Parameters
+        ----------
+        basis_a : LaplaceEigenBasis
+            Basis of source shape.
+        basis_b : LaplaceEigenBasis
+            Basis of target shape.
+        descr_a : array-like, shape=[..., n_vertices_a]
+            Descriptors on source shape.
+        descr_b : array-like, shape=[..., n_vertices_b]
+            Descriptors on target shape.
+
+        Returns
+        -------
+        factor : OperatorCommutativityEnforcing
+        """
+        return OperatorCommutativityEnforcing.from_multiplication(
+            basis_a, descr_a, basis_b, descr_b, weight=self.weight
+        )
+
+
+# =============================================================================
+# Functional Map Optimizer - Intermediate abstraction layer
+# =============================================================================
+
+
+class FunctionalMap:
+    """Optimizer for functional maps.
+
+    Takes factor_builders as configuration, then optimizes fmap given shapes/descriptors.
+    This is an intermediate abstraction between FactorBuilders and the high-level Matcher.
+
+    Parameters
+    ----------
+    factor_builders : list[FactorBuilder], optional
+        List of factor builders. If None, uses default (SDP + LB + Mult).
+    optimizer : ScipyMinimize, optional
+        Optimizer to use. If None, uses L-BFGS-B.
+    """
+
+    def __init__(self, fmap_size=None, factor_builders=None, optimizer=None):
+        self.fmap_size = fmap_size
+        self.factor_builders = factor_builders or self._default_factor_builders()
+        self.optimizer = optimizer or ScipyMinimize(method="L-BFGS-B")
+
+    def _default_factor_builders(self):
+        """Return default factor builders.
+
+        Returns
+        -------
+        builders : list[FactorBuilder]
+            Default list of factor builders.
+        """
+        return [
+            SDPFactorBuilder(weight=1.0),
+            LBCFactorBuilder(weight=1e-2),
+            MultFactorBuilder(weight=1e-1),
+        ]
+
+    def __call__(self, basis_a, basis_b, descr_a, descr_b, x_0=None):
+        """Optimize functional map.
+
+        Parameters
+        ----------
+        basis_a : LaplaceEigenBasis
+            Basis of source shape.
+        basis_b : LaplaceEigenBasis
+            Basis of target shape.
+        descr_a : array-like
+            Descriptors on source shape.
+        descr_b : array-like
+            Descriptors on target shape.
+
+        Returns
+        -------
+        fmap_matrix : array-like, shape=[spectrum_size_b, spectrum_size_a]
+            Optimized functional map matrix.
+        """
+        if self.fmap_size is not None:
+            if basis_a.spectrum_size != self.fmap_size[1]:
+                basis_a.use_k = self.fmap_size[1]
+            if basis_b.spectrum_size != self.fmap_size[0]:
+                basis_b.use_k = self.fmap_size[0]
+
+        # Build factors from builders
+        objective = self._build_factor_sum(
+            self.factor_builders, basis_a, basis_b, descr_a, descr_b
+        )
+
+        # Optimize
+        if x_0 is None:
+            x_0 = gs.zeros((basis_b.spectrum_size, basis_a.spectrum_size))
+
+        res = self.optimizer.minimize(objective, x_0, fun_jac=objective.gradient)
+
+        return res.x.reshape(x_0.shape)
+
+    def _build_factor_sum(self, builders, basis_a, basis_b, descr_a, descr_b):
+        """Build FactorSum from a list of factor builders.
+
+        Parameters
+        ----------
+        builders : list[FactorBuilder]
+            List of factor builders.
+        basis_a : LaplaceEigenBasis
+            Basis of source shape.
+        basis_b : LaplaceEigenBasis
+            Basis of target shape.
+        descr_a : array-like
+            Descriptors on source shape.
+        descr_b : array-like
+            Descriptors on target shape.
+
+        Returns
+        -------
+        factor_sum : FactorSum
+            Combined objective function.
+        """
+        factors = [
+            builder.build(basis_a, basis_b, descr_a, descr_b) for builder in builders
+        ]
+        return FactorSum(factors)
