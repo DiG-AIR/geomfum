@@ -15,6 +15,12 @@ def pv_faces(faces):
     return np.hstack([np.full((faces.shape[0], 1), 3, dtype=np.int64), faces]).ravel()
 
 
+def pv_tets(tets):
+    """Convert tetrahedral cells (m, 4) to PyVista's flat cell format."""
+    tets = np.asarray(tets, dtype=np.int64)
+    return np.hstack([np.full((tets.shape[0], 1), 4, dtype=np.int64), tets]).ravel()
+
+
 def show_mesh(
     vertices,
     faces,
@@ -96,6 +102,40 @@ def show_point_cloud(
         color=None if scalars is not None else "lightgray",
         point_size=point_size,
         render_points_as_spheres=True,
+    )
+    plotter.add_axes()
+    plotter.show(jupyter_backend="static")
+
+
+def show_volume_mesh(
+    vertices,
+    tets,
+    scalars=None,
+    scalar_name="value",
+    cmap="coolwarm",
+    show_edges=False,
+    clip=False,
+    clip_normal="x",
+):
+    """Visualize a tetrahedral mesh with optional scalar coloring.
+
+    By default renders the extracted surface. Set clip=True to slice along
+    clip_normal and reveal interior structure.
+    """
+    cell_types = np.full(len(tets), pv.CellType.TETRA, dtype=np.uint8)
+    grid = pv.UnstructuredGrid(pv_tets(tets), cell_types, np.asarray(vertices, dtype=float))
+    if scalars is not None:
+        grid.point_data[scalar_name] = np.asarray(scalars)
+
+    mesh_to_show = grid.clip(clip_normal) if clip else grid.extract_surface()
+
+    plotter = pv.Plotter(notebook=True)
+    plotter.add_mesh(
+        mesh_to_show,
+        scalars=scalar_name if scalars is not None else None,
+        cmap=cmap,
+        color=None if scalars is not None else "lightgray",
+        show_edges=show_edges,
     )
     plotter.add_axes()
     plotter.show(jupyter_backend="static")
