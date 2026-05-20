@@ -3,6 +3,7 @@
 import gsops.backend as gs
 
 from geomfum.io import load_tetrahedral_mesh
+from geomfum.operator import TetrahedralGradient
 
 from ._base import Shape
 
@@ -25,10 +26,7 @@ class TetrahedralMesh(Shape):
         self.vertices = gs.array(vertices)
         self.tets = gs.array(tets)
         self.faces = gs.array(faces) if faces is not None else None
-
         # Override the surface gradient with the tetrahedral gradient
-        from geomfum.operator import TetrahedralGradient
-
         self.gradient = TetrahedralGradient(self)
 
         self._tet_volumes = None

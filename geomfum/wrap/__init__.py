@@ -38,7 +38,10 @@ register_laplacian_finder("mesh", "igl", "IglMeshLaplacianFinder", requires="igl
 
 
 register_laplacian_finder(
-    "pointcloud", "robust", "RobustPointCloudLaplacianFinder", requires="robust_laplacian"
+    "pointcloud",
+    "robust",
+    "RobustPointCloudLaplacianFinder",
+    requires="robust_laplacian",
 )
 
 register_heat_kernel_signature(
@@ -92,12 +95,6 @@ register_feature_extractor(
     as_default=False,
 )
 
-register_feature_extractor(
-    "volumetric_diffusionnet",
-    "VolumetricDiffusionnetFeatureExtractor",
-    requires="torch",
-    as_default=False,
-)
 
 register_neighbor_finder(
     "pot", "PotSinkhornNeighborFinder", requires="ot", as_default=True
@@ -105,7 +102,11 @@ register_neighbor_finder(
 
 
 register_heat_distance_metric(
-    "mesh", "pp3d", "Pp3dMeshHeatDistanceMetric", requires="potpourri3d", as_default=True
+    "mesh",
+    "pp3d",
+    "Pp3dMeshHeatDistanceMetric",
+    requires="potpourri3d",
+    as_default=True,
 )
 
 register_heat_distance_metric(

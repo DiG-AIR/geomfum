@@ -128,12 +128,12 @@ class TetrahedralLaplacianFinder(BaseLaplacianFinder):
         for i in range(4):
             j = (i + 1) % 4
             k = (j + 1) % 4
-            l = (k + 1) % 4
+            ell = (k + 1) % 4
 
             Eij = vertices[tets[:, j]] - vertices[tets[:, i]]
             Eij = Eij / gs.linalg.norm(Eij, axis=1, keepdims=True)
 
-            Ekl = vertices[tets[:, l]] - vertices[tets[:, k]]
+            Ekl = vertices[tets[:, ell]] - vertices[tets[:, k]]
             Lkl = gs.linalg.norm(Ekl, axis=1)
             Ekl = Ekl / gs.linalg.norm(Ekl, axis=1, keepdims=True)
 
