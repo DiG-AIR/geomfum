@@ -57,8 +57,12 @@ class SpectralDescriptor(Descriptor, abc.ABC):
             Shape.
         """
         if self.k is not None:
-            if shape.basis.spectrum_size != self.k:
-                shape.basis.use_k = self.k
+            if shape.basis.full_spectrum_size <= self.k:
+                shape.laplacian.find_spectrum(spectrum_size=self.k, recompute=True)
+                UserWarning(
+                    f"Requested k={self.k} is larger than the number of eigenvalues currently in use (spectrum_size={shape.basis.spectrum_size}). Recomputing basis with k={self.k}."
+                )
+            shape.basis.use_k = self.k
         vals = shape.basis.vals
         vecs = shape.basis.vecs
 

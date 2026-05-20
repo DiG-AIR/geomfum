@@ -3,6 +3,7 @@
 import abc
 
 import gsops.backend as gs
+import scipy.fft as fft
 
 import geomfum.linalg as la
 from geomfum._registry import (
@@ -300,3 +301,77 @@ class LandmarkWaveKernelSignature(WhichRegistryMixins, SpectralDescriptor):
             k=k,
             landmarks=True,
         )
+
+
+class ScaleInvariantHeatKernelSignature(HeatKernelSignature):
+    """Scale-Invariant Heat Kernel Signature descriptor.
+
+    Parameters
+    ----------
+    scale : bool, optional
+        Whether to make the descriptor scale-invariant, by default True.
+    n_domain : int, optional
+        Number of frequency domains, by default 3.
+    domain : list, optional
+        List of frequency domain limits, by default None.
+    k : int, optional
+        Number of eigenvalues and eigenfunctions to use, by default None.
+
+    References
+    ----------
+    .. [BK2010] M. M. Bronstein and I. Kokkinos.
+        "Scale-invariant heat kernel signatures for non-rigid shape recognition."
+        2010 IEEE Computer Society Conference on Computer Vision and Pattern Recognition,
+        San Francisco, CA, USA, 2010, pp. 1704-1711.
+        https://doi.org/10.1109/CVPR.2010.5539838.
+    """
+
+    def __init__(self, scale=True, n_domain=3, domain=None, k=None):
+        super().__init__(scale=scale, n_domain=n_domain, domain=domain, k=k)
+
+    def __call__(self, shape):
+        """Compute descriptor.
+
+        Parameters
+        ----------
+        shape : Shape.
+            Shape.
+        """
+        hks = super().__call__(shape)
+
+        hks_diff = gs.log(hks[1:, :] + 1e-2) - gs.log(hks[:-1, :] + 1e-2)
+        hks_diff_spectrum = fft.fft(hks_diff, axis=-2)  ## TODO: substitute with gs
+        return gs.abs(hks_diff_spectrum)
+
+
+class LandmarkScaleInvariantHeatKernelSignature(LandmarkHeatKernelSignature):
+    """Scale-Invariant Heat Kernel Signature descriptor on landmarks.
+
+    Parameters
+    ----------
+    scale : bool, optional
+        Whether to make the descriptor scale-invariant, by default True.
+    n_domain : int, optional
+        Number of frequency domains, by default 3.
+    domain : list, optional
+        List of frequency domain limits, by default None.
+    k : int, optional
+        Number of eigenvalues and eigenfunctions to use, by default None.
+    """
+
+    def __init__(self, scale=True, n_domain=3, domain=None, k=None):
+        super().__init__(scale=scale, n_domain=n_domain, domain=domain, k=k)
+
+    def __call__(self, shape):
+        """Compute descriptor.
+
+        Parameters
+        ----------
+        shape : Shape.
+            Shape.
+        """
+        hks = super().__call__(shape)
+
+        hks_diff = gs.log(hks[1:, :] + 1e-2) - gs.log(hks[:-1, :] + 1e-2)
+        hks_diff_spectrum = fft.fft(hks_diff, axis=-2)  ## TODO: substitute with gs
+        return gs.abs(hks_diff_spectrum)

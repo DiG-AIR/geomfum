@@ -25,9 +25,26 @@ class NotebooksDataset:
 
         pyfm_data_url = "https://raw.githubusercontent.com/RobinMagnet/pyFM/refs/heads/master/examples/data/"
 
+        faust_url = "https://raw.githubusercontent.com/JM-data/PyFuncMap/4bde4484c3e93bff925a6a82da29fa79d6862f4b/FAUST_shapes_off/"
+
+        s4a_data_url = "https://raw.githubusercontent.com/gviga/S4A-Scalable-Spectral-Shape-Analysis/refs/heads/main/data/giorgio_/"
         self.files = {
             "cat-00": DownloadableFile("cat-00.off", f"{pyfm_data_url}/cat-00.off"),
             "lion-00": DownloadableFile("lion-00.off", f"{pyfm_data_url}/lion-00.off"),
+            "faust-00": DownloadableFile("faust-00.off", f"{faust_url}/tr_reg_000.off"),
+            "faust-04": DownloadableFile("faust-04.off", f"{faust_url}/tr_reg_004.off"),
+            "brain_template": DownloadableFile(
+                "brain_template.off", f"{s4a_data_url}/MNI_remesh.off"
+            ),
+            "brain_subject": DownloadableFile(
+                "brain_subject.off", f"{s4a_data_url}/remeshed/000000_tumoredbrain.off"
+            ),
+            "template_labels": DownloadableFile(
+                "template_labels.txt", f"{s4a_data_url}/remeshed_labels.txt"
+            ),
+            "template_ldmk": DownloadableFile(
+                "template_ldmk.txt", f"{s4a_data_url}/remeshed_landmarks.txt"
+            ),
         }
 
         os.makedirs(data_dir, exist_ok=True)

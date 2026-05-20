@@ -354,14 +354,6 @@ class NeighborFinderRegistry(Registry):
     MAP = {}
 
 
-class MeshPlotterRegistry(Registry):
-    MAP = {}
-
-
-class PointCloudPlotterRegistry(Registry):
-    MAP = {}
-
-
 class _MeshHeatDistanceMetricRegistry(Registry):
     has_internal = False
     MAP = {}
@@ -377,6 +369,10 @@ class HeatDistanceMetricRegistry(NestedRegistry):
         "mesh": _MeshHeatDistanceMetricRegistry,
         "pointcloud": _PointSetHeatDistanceMetricRegistry,
     }
+
+class PreciseGeodesicDistanceMetricRegistry(Registry):
+    has_internal = False
+    MAP = {}
 
 
 def _create_register_funcs(module):
