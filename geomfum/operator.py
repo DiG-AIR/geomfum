@@ -11,7 +11,11 @@ from geomfum._registry import (
     FaceValuedGradientRegistry,
     WhichRegistryMixins,
 )
-from geomfum.laplacian import GraphLaplacianFinder, LaplacianFinder, LaplacianSpectrumFinder
+from geomfum.laplacian import (
+    GraphLaplacianFinder,
+    LaplacianFinder,
+    LaplacianSpectrumFinder,
+)
 
 
 # TODO: remove functional; simply use operator

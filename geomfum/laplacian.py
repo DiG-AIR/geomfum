@@ -117,7 +117,6 @@ class GraphLaplacianFinder(BaseLaplacianFinder):
 
         adj_scipy = gs.sparse.to_scipy_csc(shape.adjacency_matrix)
         degree = np.asarray(adj_scipy.sum(axis=1)).flatten()
-        n = shape.n_vertices
 
         laplacian_scipy = scipy.sparse.diags(degree, format="csc") - adj_scipy
 
