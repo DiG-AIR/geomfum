@@ -2,6 +2,7 @@
 
 import gsops.backend as gs
 
+import geomfum.wrap as _wrap  # noqa: F401 (triggers operator registrations)
 from geomfum.io import load_mesh
 from geomfum.metric import HeatDistanceMetric
 from geomfum.operator import (
