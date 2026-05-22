@@ -4,6 +4,7 @@ import abc
 import logging
 
 import gsops.backend as gs
+import torch
 
 from geomfum.operator import Gradient, Laplacian
 
@@ -24,6 +25,44 @@ class Shape(abc.ABC):
         self.laplacian = Laplacian(self)
         self.gradient = Gradient(self)
         self.landmark_indices = None
+
+    @property
+    def device(self):
+        """Device of the shape, inferred from vertices."""
+        return getattr(self.vertices, "device", torch.device("cpu"))
+
+    def to(self, device):
+        """Move all computed shape data to ``device``.
+
+        Geometry is always computed on CPU (scipy constraint). This method
+        only moves already-computed results. Lazy properties that haven't
+        been computed yet will be computed on CPU and moved to ``device``
+        on first access after this call.
+
+        Parameters
+        ----------
+        device : torch.device or str
+            Target device.
+
+        Returns
+        -------
+        self : Shape
+        """
+        device = torch.device(device)
+        if self.device == device:
+            return self
+        self.vertices = gs.to_device(self.vertices, device)
+        if self._basis is not None:
+            self._basis.to(device)
+        self.laplacian.to(device)
+        self.gradient.to(device)
+        if self.landmark_indices is not None:
+            self.landmark_indices = gs.to_device(self.landmark_indices, device)
+        self._to(device)
+        return self
+
+    def _to(self, device):
+        """Move subclass-specific cached fields to ``device``."""
 
     def equip_with_operator(self, name, Operator, allow_overwrite=True, **kwargs):
         """Equip shape with a differential or geometric operator.

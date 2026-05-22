@@ -376,8 +376,9 @@ class NamFromP2pConverter(BaseFmFromP2pConverter):
         nam: NeuralAdjointMap , shape=[spectrum_size_b, spectrum_size_a]
             Neural Adjoint Map model.
         """
-        evects1_pb = gs.to_torch(basis_a.vecs[p2p, :]).to(self.device).double()
-        evects2 = gs.to_torch(basis_b.vecs).to(self.device).double()
+        # p2p is CPU (numpy from sklearn); force vecs to CPU before indexing.
+        evects1_pb = gs.to_torch(basis_a.vecs).cpu()[p2p, :].to(self.device).double()
+        evects2 = gs.to_torch(basis_b.vecs).cpu().to(self.device).double()
         nam = NeuralAdjointMap(
             input_dim=basis_a.spectrum_size,
             output_dim=basis_b.spectrum_size,

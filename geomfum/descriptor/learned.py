@@ -84,6 +84,4 @@ class LearnedDescriptor(Descriptor, abc.ABC, nn.Module):
             Descriptors of the shape, where `n_features` is the number of features extracted by the feature extractor.
         """
         features = self.feature_extractor(shape)
-        features = gs.array(features.squeeze().double()).T
-
-        return features
+        return features.squeeze().double().T

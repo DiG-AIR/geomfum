@@ -1,5 +1,6 @@
 """Definition of triangle mesh."""
 
+import numpy as np
 import gsops.backend as gs
 
 from geomfum.io import load_mesh
@@ -50,6 +51,27 @@ class TriangleMesh(Shape):
         self.metric = None
 
         self._at_init()
+
+    def _to(self, device):
+        self.faces = gs.to_device(self.faces, device)
+        # scipy-backed caches: move to new device
+        if self._vertex_normals is not None:
+            self._vertex_normals = gs.to_device(self._vertex_normals, device)
+        if self._vertex_tangent_frames is not None:
+            self._vertex_tangent_frames = gs.to_device(
+                self._vertex_tangent_frames, device
+            )
+        if self._edge_tangent_vectors is not None:
+            self._edge_tangent_vectors = gs.to_device(
+                self._edge_tangent_vectors, device
+            )
+        # pure-gsops caches: invalidate so they recompute naturally on the new device
+        self._edges = None
+        self._face_normals = None
+        self._face_area_vectors = None
+        self._face_areas = None
+        self._vertex_areas = None
+        self._dist_matrix = None
 
     def _at_init(self):
         self.equip_with_operator(
@@ -196,15 +218,18 @@ class TriangleMesh(Shape):
             Normalized per-vertex normals.
         """
         if self._vertex_normals is None:
-            device = getattr(self.vertices, "device", None)
+            # gs.sparse.coo_matrix is scipy-backed: force numpy for all inputs.
+            vertices_cpu = np.asarray(gs.to_device(self.vertices, "cpu"))
+            faces_cpu = np.asarray(gs.to_device(self.faces, "cpu"))
+            face_normals_cpu = np.asarray(gs.to_device(self.face_normals, "cpu"))
 
             vind012 = gs.concatenate(
-                [self.faces[:, 0], self.faces[:, 1], self.faces[:, 2]]
+                [faces_cpu[:, 0], faces_cpu[:, 1], faces_cpu[:, 2]]
             )
-            zeros = gs.to_device(gs.zeros(len(vind012)), device)
+            zeros = gs.zeros(len(vind012))
 
-            normals_repeated = gs.vstack([self.face_normals] * 3)
-            vertex_normals = gs.to_device(gs.zeros_like(self.vertices), device)
+            normals_repeated = gs.vstack([face_normals_cpu] * 3)
+            vertex_normals = gs.zeros_like(vertices_cpu)
             for c in range(3):
                 normals = normals_repeated[:, c]
 
@@ -222,7 +247,7 @@ class TriangleMesh(Shape):
                 gs.linalg.norm(vertex_normals, axis=1, keepdims=True) + 1e-12
             )
 
-            self._vertex_normals = vertex_normals
+            self._vertex_normals = gs.to_device(vertex_normals, self.device)
 
         return self._vertex_normals
 
@@ -275,8 +300,12 @@ class TriangleMesh(Shape):
             - [n_vertices, 2, :] are the vertex normals
         """
         if self._vertex_tangent_frames is None:
-            self._vertex_tangent_frames = compute_tangent_frames(
-                self.vertices, self.vertex_normals
+            self._vertex_tangent_frames = gs.to_device(
+                compute_tangent_frames(
+                    np.asarray(self.vertices),
+                    np.asarray(self.vertex_normals),
+                ),
+                self.device,
             )
 
         return self._vertex_tangent_frames
@@ -291,12 +320,14 @@ class TriangleMesh(Shape):
             Tangent vectors of the edges, projected onto the local tangent plane.
         """
         if self._edge_tangent_vectors is None:
-            edge_tangent_vectors = compute_edge_tangent_vectors(
-                self.vertices,
-                self.edges,
-                self.vertex_tangent_frames,
+            self._edge_tangent_vectors = gs.to_device(
+                compute_edge_tangent_vectors(
+                    np.asarray(self.vertices),
+                    np.asarray(self.edges),
+                    np.asarray(self.vertex_tangent_frames),
+                ),
+                self.device,
             )
-            self._edge_tangent_vectors = edge_tangent_vectors
         return self._edge_tangent_vectors
 
     @property  # ToDo

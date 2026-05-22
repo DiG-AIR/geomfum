@@ -3,6 +3,7 @@
 import abc
 
 import gsops.backend as gs
+import torch
 import torch.nn as nn
 
 
@@ -88,16 +89,18 @@ class ForwardFunctionalMap(abc.ABC, nn.Module):
             mesh_a.basis.use_k = self.fmap_shape[1]
             mesh_b.basis.use_k = self.fmap_shape[0]
 
-        evals_a = mesh_a.basis.vals
         sdescr_a = mesh_a.basis.project(descr_a)
-        evals_b = mesh_b.basis.vals
         sdescr_b = mesh_b.basis.project(descr_b)
 
-        mask = self._compute_mask(evals_a, evals_b, self.resolvent_gamma)
+        mask = self._compute_mask(
+            mesh_a.basis.vals, mesh_b.basis.vals, self.resolvent_gamma
+        )
         fmap_12 = self._compute_functional_map(sdescr_a, sdescr_b, mask)
         fmap_21 = None
         if self.bijective:
-            mask = self._compute_mask(evals_b, evals_a, self.resolvent_gamma)
+            mask = self._compute_mask(
+                mesh_b.basis.vals, mesh_a.basis.vals, self.resolvent_gamma
+            )
             fmap_21 = self._compute_functional_map(sdescr_b, sdescr_a, mask)
         return fmap_12, fmap_21
 
@@ -118,10 +121,7 @@ class ForwardFunctionalMap(abc.ABC, nn.Module):
         mask : array-like, shape=[..., spectrum_size_b, spectrum_size_a]
             Mask for the functional map.
         """
-        evals_a = gs.array(evals_a)
-        evals_b = gs.array(evals_b)
-
-        scaling_factor = max(max(evals_a), max(evals_b))
+        scaling_factor = max(evals_a.max(), evals_b.max())
         evals_a, evals_b = evals_a / scaling_factor, evals_b / scaling_factor
         evals_gamma_a = gs.power(evals_a, resolvant_gamma)[None, :]
         evals_gamma_b = gs.power(evals_b, resolvant_gamma)[:, None]

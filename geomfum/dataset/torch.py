@@ -134,7 +134,9 @@ class ShapeDataset(Dataset):
         shape_data = {}
 
         if self.correspondences:
-            shape_data.update({"corr": gs.array(self.corrs[filename])})
+            shape_data.update(
+                {"corr": torch.as_tensor(self.corrs[filename], dtype=torch.long)}
+            )
 
         if self.distances:
             mat_subfolder = os.path.join(self.dataset_dir, "dist")
@@ -158,20 +160,11 @@ class ShapeDataset(Dataset):
                     {"D": gs.to_numpy(geod_distance_matrix)},
                 )
 
-            shape_data.update({"dist_matrix": gs.array(geod_distance_matrix)})
+            shape_data.update(
+                {"dist_matrix": torch.as_tensor(np.asarray(geod_distance_matrix))}
+            )
 
-        # Move shape data to device
-        shape.vertices = gs.to_device(shape.vertices, self.device)
-        shape.basis.full_vals = gs.to_device(shape.basis.full_vals, self.device)
-        shape.basis.full_vecs = gs.to_device(shape.basis.full_vecs, self.device)
-        shape.laplacian._mass_matrix = gs.to_device(
-            shape.laplacian._mass_matrix, self.device
-        )
-
-        # Only move faces to device for meshes
-        if self.shape_type == "mesh":
-            shape.faces = gs.to_device(shape.faces, self.device)
-
+        shape.to(self.device)
         shape_data.update({"shape": shape})
 
         return shape_data

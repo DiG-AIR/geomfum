@@ -115,6 +115,21 @@ class Laplacian(FunctionalOperator):
 
         return self._basis
 
+    @property
+    def device(self):
+        """Device of the Laplacian, mirrors the parent shape's device."""
+        return self._shape.device
+
+    def to(self, device):
+        """Move cached Laplacian matrices and basis to ``device``."""
+        if self._stiffness_matrix is not None:
+            self._stiffness_matrix = gs.to_device(self._stiffness_matrix, device)
+        if self._mass_matrix is not None:
+            self._mass_matrix = gs.to_device(self._mass_matrix, device)
+        if self._basis is not None:
+            self._basis.to(device)
+        return self
+
     def find(self, laplacian_finder=None, recompute=False):
         """Compute the laplacian matrices using an indicated algorithm.
 
@@ -144,7 +159,10 @@ class Laplacian(FunctionalOperator):
                 shape_type=self._shape.shape_type, which="robust"
             )
 
-        self._stiffness_matrix, self._mass_matrix = laplacian_finder(self._shape)
+        # Finders always operate on CPU (scipy). Move results to shape's device.
+        stiffness, mass = laplacian_finder(self._shape)
+        self._stiffness_matrix = gs.to_device(stiffness, self._shape.device)
+        self._mass_matrix = gs.to_device(mass, self._shape.device)
 
         return self._stiffness_matrix, self._mass_matrix
 
@@ -188,7 +206,9 @@ class Laplacian(FunctionalOperator):
                 fix_sign=False,
             )
 
+        # Eigendecomposition always runs on CPU (scipy). Move to shape's device.
         self._basis = laplacian_spectrum_finder(self._shape, as_basis=True)
+        self._basis.to(self._shape.device)
 
         if set_as_basis:
             self._shape.set_basis(self.basis)
@@ -237,6 +257,17 @@ class Gradient(FunctionalOperator):
         self._gradient_matrix = gradient_matrix
 
     @property
+    def device(self):
+        """Device of the Gradient, mirrors the parent shape's device."""
+        return self._shape.device
+
+    def to(self, device):
+        """Move cached gradient matrix to ``device``."""
+        if self._gradient_matrix is not None:
+            self._gradient_matrix = gs.to_device(self._gradient_matrix, device)
+        return self
+
+    @property
     def gradient_matrix(self):
         """Compute the gradient operator as a complex sparse matrix.
 
@@ -250,12 +281,18 @@ class Gradient(FunctionalOperator):
             and the imaginary part corresponds to the Y component.
         """
         if self._gradient_matrix is None:
+            import numpy as np
             from geomfum.shape.shape_utils import compute_gradient_matrix_fem
 
-            self._gradient_matrix = compute_gradient_matrix_fem(
-                self._shape.vertices,
-                self._shape.edges,
-                self._shape.edge_tangent_vectors,
+            # compute_gradient_matrix_fem uses scipy — always runs on CPU.
+            # np.asarray handles both numpy arrays and torch CPU tensors.
+            self._gradient_matrix = gs.to_device(
+                compute_gradient_matrix_fem(
+                    np.asarray(gs.to_device(self._shape.vertices, "cpu")),
+                    np.asarray(gs.to_device(self._shape.edges, "cpu")),
+                    np.asarray(gs.to_device(self._shape.edge_tangent_vectors, "cpu")),
+                ),
+                self._shape.device,
             )
 
         return self._gradient_matrix
