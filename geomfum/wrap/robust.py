@@ -1,7 +1,5 @@
 """robust_laplacian wrapper."""
 
-import numpy as np
-
 import gsops.backend as gs
 import robust_laplacian
 
@@ -36,8 +34,8 @@ class RobustMeshLaplacianFinder(BaseLaplacianFinder):
             Diagonal lumped mass matrix.
         """
         stiffness_matrix, mass_matrix = robust_laplacian.mesh_laplacian(
-            np.asarray(gs.to_device(shape.vertices, "cpu")),
-            np.asarray(gs.to_device(shape.faces, "cpu")),
+            gs.to_numpy(gs.to_device(shape.vertices, "cpu")),
+            gs.to_numpy(gs.to_device(shape.faces, "cpu")),
             mollify_factor=self.mollify_factor,
         )
 
@@ -77,7 +75,7 @@ class RobustPointCloudLaplacianFinder(BaseLaplacianFinder):
             Diagonal lumped mass matrix.
         """
         stiffness_matrix, mass_matrix = robust_laplacian.point_cloud_laplacian(
-            np.asarray(gs.to_device(shape.vertices, "cpu")),
+            gs.to_numpy(gs.to_device(shape.vertices, "cpu")),
             mollify_factor=self.mollify_factor,
             n_neighbors=self.n_neighbors,
         )

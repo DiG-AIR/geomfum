@@ -1,6 +1,5 @@
 """Definition of triangle mesh."""
 
-import numpy as np
 import gsops.backend as gs
 
 from geomfum.io import load_mesh
@@ -218,10 +217,10 @@ class TriangleMesh(Shape):
             Normalized per-vertex normals.
         """
         if self._vertex_normals is None:
-            # gs.sparse.coo_matrix is scipy-backed: force numpy for all inputs.
-            vertices_cpu = np.asarray(gs.to_device(self.vertices, "cpu"))
-            faces_cpu = np.asarray(gs.to_device(self.faces, "cpu"))
-            face_normals_cpu = np.asarray(gs.to_device(self.face_normals, "cpu"))
+            # gs.sparse.coo_matrix needs CPU data; CPU-force all inputs.
+            vertices_cpu = gs.to_device(self.vertices, "cpu")
+            faces_cpu = gs.to_device(self.faces, "cpu")
+            face_normals_cpu = gs.to_device(self.face_normals, "cpu")
 
             vind012 = gs.concatenate(
                 [faces_cpu[:, 0], faces_cpu[:, 1], faces_cpu[:, 2]]
@@ -300,12 +299,8 @@ class TriangleMesh(Shape):
             - [n_vertices, 2, :] are the vertex normals
         """
         if self._vertex_tangent_frames is None:
-            self._vertex_tangent_frames = gs.to_device(
-                compute_tangent_frames(
-                    np.asarray(self.vertices),
-                    np.asarray(self.vertex_normals),
-                ),
-                self.device,
+            self._vertex_tangent_frames = compute_tangent_frames(
+                self.vertices, self.vertex_normals
             )
 
         return self._vertex_tangent_frames
@@ -320,14 +315,12 @@ class TriangleMesh(Shape):
             Tangent vectors of the edges, projected onto the local tangent plane.
         """
         if self._edge_tangent_vectors is None:
-            self._edge_tangent_vectors = gs.to_device(
-                compute_edge_tangent_vectors(
-                    np.asarray(self.vertices),
-                    np.asarray(self.edges),
-                    np.asarray(self.vertex_tangent_frames),
-                ),
-                self.device,
+            edge_tangent_vectors = compute_edge_tangent_vectors(
+                self.vertices,
+                self.edges,
+                self.vertex_tangent_frames,
             )
+            self._edge_tangent_vectors = edge_tangent_vectors
         return self._edge_tangent_vectors
 
     @property  # ToDo

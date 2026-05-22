@@ -281,16 +281,15 @@ class Gradient(FunctionalOperator):
             and the imaginary part corresponds to the Y component.
         """
         if self._gradient_matrix is None:
-            import numpy as np
             from geomfum.shape.shape_utils import compute_gradient_matrix_fem
 
             # compute_gradient_matrix_fem uses scipy — always runs on CPU.
-            # np.asarray handles both numpy arrays and torch CPU tensors.
+            # Move result to shape's device afterwards.
             self._gradient_matrix = gs.to_device(
                 compute_gradient_matrix_fem(
-                    np.asarray(gs.to_device(self._shape.vertices, "cpu")),
-                    np.asarray(gs.to_device(self._shape.edges, "cpu")),
-                    np.asarray(gs.to_device(self._shape.edge_tangent_vectors, "cpu")),
+                    gs.to_device(self._shape.vertices, "cpu"),
+                    gs.to_device(self._shape.edges, "cpu"),
+                    gs.to_device(self._shape.edge_tangent_vectors, "cpu"),
                 ),
                 self._shape.device,
             )
