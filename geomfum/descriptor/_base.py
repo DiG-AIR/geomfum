@@ -57,11 +57,18 @@ class SpectralDescriptor(Descriptor, abc.ABC):
             Shape.
         """
         if self.k is not None:
-            if shape.basis.full_spectrum_size <= self.k:
+            if shape.basis.full_spectrum_size < self.k:
+                device = getattr(shape.basis.vals, "device", "cpu")
                 shape.laplacian.find_spectrum(spectrum_size=self.k, recompute=True)
-                UserWarning(
+                print(
                     f"Requested k={self.k} is larger than the number of eigenvalues currently in use (spectrum_size={shape.basis.spectrum_size}). Recomputing basis with k={self.k}."
                 )
+                shape.basis.full_vals = gs.to_device(shape.basis.full_vals, device)
+                shape.basis.full_vecs = gs.to_device(shape.basis.full_vecs, device)
+                shape.laplacian._mass_matrix = gs.to_device(
+                    shape.laplacian._mass_matrix, device
+                )
+
             shape.basis.use_k = self.k
         vals = shape.basis.vals
         vecs = shape.basis.vecs

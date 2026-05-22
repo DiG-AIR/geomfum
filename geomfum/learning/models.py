@@ -86,7 +86,12 @@ class FMNet(BaseModel):
             p2p12 = self.converter(fmap21, mesh_b.basis, mesh_a.basis)
 
         if as_dict:
-            result = {"fmap12": fmap12, "fmap21": fmap21}
+            result = {
+                "fmap12": fmap12,
+                "fmap21": fmap21,
+                "desc_a": desc_a,
+                "desc_b": desc_b,
+            }
             if not self.training:
                 result.update({"p2p12": p2p12, "p2p21": p2p21})
             return result

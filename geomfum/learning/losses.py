@@ -467,6 +467,61 @@ class FmapDescriptorsSupervisionLoss(nn.Module):
         ) + self.weight * self.metric(fmap21, fmap21_desc)
 
 
+class SpectralDescriptorPreservationLoss(nn.Module):
+    """Spectral descriptor preservation loss.
+
+    Penalises ||C12 Φ_A - Φ_B||^2 and ||C21 Φ_B - Φ_A||^2, where Φ_X are
+    the descriptors of shape X projected onto its LBO eigenbasis.  This couples
+    the functional map to the learned features and provides the main gradient
+    signal back into the feature extractor.
+
+    Parameters
+    ----------
+    weight : float, optional
+        Weight for the loss term (default: 1).
+    """
+
+    def __init__(self, weight=1):
+        super().__init__()
+        self.weight = weight
+        self.metric = SquaredFrobeniusLoss()
+
+    required_inputs = ["fmap12", "fmap21", "desc_a", "desc_b", "shape_a", "shape_b"]
+
+    def forward(self, fmap12, fmap21, desc_a, desc_b, shape_a, shape_b):
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        fmap12 : torch.Tensor
+            Functional map from shape A to shape B, shape (k_b, k_a).
+        fmap21 : torch.Tensor
+            Functional map from shape B to shape A, shape (k_a, k_b).
+        desc_a : torch.Tensor
+            Descriptors on shape A, shape (n_descr, n_verts_a).
+        desc_b : torch.Tensor
+            Descriptors on shape B, shape (n_descr, n_verts_b).
+        shape_a : Shape
+            Shape A (provides the spectral basis for projection).
+        shape_b : Shape
+            Shape B (provides the spectral basis for projection).
+
+        Returns
+        -------
+        torch.Tensor
+            Scalar weighted loss.
+        """
+        # phi_x : (n_descr, k_x)  — spectral coefficients of each descriptor
+        phi_a = shape_a.basis.project(desc_a)
+        phi_b = shape_b.basis.project(desc_b)
+        # fmap12 @ phi_a.T : (k_b, n_descr)  vs  phi_b.T : (k_b, n_descr)
+        return self.weight * (
+            self.metric(fmap12 @ phi_a.T, phi_b.T)
+            + self.metric(fmap21 @ phi_b.T, phi_a.T)
+        )
+
+
 class GeodesicError(nn.Module):
     """
     Computes the accuracy of a correspondence by measuring the mean of the geodesic distances between points of the predicted permuted target and the ground truth target.

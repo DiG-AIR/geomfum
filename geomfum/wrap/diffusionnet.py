@@ -110,7 +110,19 @@ class DiffusionnetFeatureExtractor(BaseFeatureExtractor, nn.Module):
         )
         self.descriptor = descriptor
 
-        self.device = device
+        self._device = device
+
+    @property
+    def device(self):
+        """Device inferred from model parameters, stays in sync with .to() calls."""
+        try:
+            return next(self.model.parameters()).device
+        except StopIteration:
+            return self._device
+
+    @device.setter
+    def device(self, value):
+        self._device = value
 
     def forward(self, shape):
         """Call pass through the DiffusionNet model.
@@ -125,10 +137,11 @@ class DiffusionnetFeatureExtractor(BaseFeatureExtractor, nn.Module):
         torch.Tensor
             Extracted feature tensor of shape [1, V, out_channels].
         """
+        device = self.device
         # Support both Shape and dict
-        v = gs.to_torch(shape.vertices).float().to(self.device)
+        v = gs.to_torch(shape.vertices).float().to(device)
         if isinstance(shape, TriangleMesh):
-            f = gs.to_torch(shape.faces).int().to(self.device)
+            f = gs.to_torch(shape.faces).int().to(device)
             f = f.unsqueeze(0).to(torch.float32)
         else:
             f = None
@@ -138,19 +151,19 @@ class DiffusionnetFeatureExtractor(BaseFeatureExtractor, nn.Module):
         )
         v = v.unsqueeze(0).to(torch.float32)
 
-        frames = frames.unsqueeze(0).to(torch.float32)
-        mass = mass.unsqueeze(0).to(torch.float32)
-        L = L.unsqueeze(0).to(torch.float32)
-        evals = evals.unsqueeze(0).to(torch.float32)
-        evecs = evecs.unsqueeze(0).to(torch.float32)
-        gradX = gradX.unsqueeze(0).to(torch.float32)
-        gradY = gradY.unsqueeze(0).to(torch.float32)
+        frames = frames.unsqueeze(0).to(torch.float32).to(device)
+        mass = mass.unsqueeze(0).to(torch.float32).to(device)
+        L = L.unsqueeze(0).to(torch.float32).to(device)
+        evals = evals.unsqueeze(0).to(torch.float32).to(device)
+        evecs = evecs.unsqueeze(0).to(torch.float32).to(device)
+        gradX = gradX.unsqueeze(0).to(torch.float32).to(device)
+        gradY = gradY.unsqueeze(0).to(torch.float32).to(device)
 
         if self.descriptor is None:
             input_feat = None
         else:
             input_feat = self.descriptor(shape)
-            input_feat = gs.to_torch(input_feat).to(torch.float32).to(self.device)
+            input_feat = gs.to_torch(input_feat).to(torch.float32).to(device)
             input_feat = input_feat.unsqueeze(0).transpose(2, 1)
 
             if input_feat.shape[-1] != self.in_channels:
