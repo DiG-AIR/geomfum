@@ -198,8 +198,8 @@ class LaplacianCommutativityLoss(nn.Module):
         torch.Tensor
             Scalar tensor representing the weighted squared Frobenius norm of the Laplacian commutativity error.
         """
-        val_a = torch.as_tensor(shape_a.basis.vals, device=fmap12.device)
-        val_b = torch.as_tensor(shape_b.basis.vals, device=fmap12.device)
+        val_a = shape_a.basis.vals
+        val_b = shape_b.basis.vals
         return self.weight * self.metric(
             torch.einsum(
                 "bc,c->bc",
@@ -289,15 +289,9 @@ class DescriptorCommutativityLoss(nn.Module):
         # desc: (num_vertices, num_descriptors)
         # basis.vecs: (num_vertices, spectrum_size)
         # basis.pinv: (spectrum_size, num_vertices)
-        vecs = torch.as_tensor(
-            basis.vecs, device=desc.device
-        )  # (num_vertices, spectrum_size)
-        pinv = torch.as_tensor(
-            basis.pinv, device=desc.device
-        )  # (spectrum_size, num_vertices)
         operators = []
         for desc_i in desc:
-            operator = pinv @ la.rowwise_scaling(desc_i, vecs)
+            operator = basis.pinv @ la.rowwise_scaling(desc_i, basis.vecs)
             operators.append(operator)
 
         return torch.stack(operators)  # (num_descriptors, spectrum_size, spectrum_size)
@@ -393,13 +387,9 @@ class GroundTruthSupervisionLoss(nn.Module):
         """
         # corr indices stay on CPU; do indexing on CPU to avoid device conflicts,
         # then move results to the caller's device via .to() in forward().
-        pinv_b = shape_b.basis.pinv.cpu()
-        vecs_a = shape_a.basis.vecs.cpu()
-        pinv_a = shape_a.basis.pinv.cpu()
-        vecs_b = shape_b.basis.vecs.cpu()
 
-        fmap12_gt = pinv_b[:, corr_b] @ vecs_a[corr_a, :]
-        fmap21_gt = pinv_a[:, corr_a] @ vecs_b[corr_b, :]
+        fmap12_gt = shape_b.basis.pinv[:, corr_b] @ shape_a.basis.vecs[corr_a, :]
+        fmap21_gt = shape_a.basis.pinv[:, corr_a] @ shape_b.basis.vecs[corr_b, :]
 
         return fmap12_gt, fmap21_gt
 
