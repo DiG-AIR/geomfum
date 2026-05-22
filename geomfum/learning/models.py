@@ -33,6 +33,10 @@ class FMNet(BaseModel):
         Feature extractor to use for the descriptors.
     fmap_module : ForwardFunctionalMap
         Functional map module to use for the forward pass.
+    fmap_size : int or tuple of int, optional
+        Number of eigenfunctions for the functional map, as (k_b, k_a).
+        A single int uses the same k for both shapes.
+        If None, uses the current ``use_k`` set on each shape's basis.
     converter : P2pFromFmConverter
         Converter to convert functional maps to point-to-point correspondences.
     """
@@ -41,6 +45,7 @@ class FMNet(BaseModel):
         self,
         feature_extractor=FeatureExtractor.from_registry(which="diffusionnet"),
         fmap_module=ForwardFunctionalMap(),
+        fmap_size=None,
         converter=P2pFromFmConverter(),
     ):
         super(FMNet, self).__init__()
@@ -50,6 +55,7 @@ class FMNet(BaseModel):
             feature_extractor=self.feature_extractor
         )
         self.fmap_module = fmap_module
+        self.fmap_size = (fmap_size, fmap_size) if isinstance(fmap_size, int) else fmap_size
         self.converter = converter
 
     def forward(self, mesh_a, mesh_b, as_dict=True):
@@ -79,11 +85,15 @@ class FMNet(BaseModel):
         desc_a = self.descriptors_module(mesh_a)
         desc_b = self.descriptors_module(mesh_b)
 
-        fmap12, fmap21 = self.fmap_module(mesh_a, mesh_b, desc_a, desc_b)
+        k_b, k_a = self.fmap_size if self.fmap_size else (mesh_b.basis.use_k, mesh_a.basis.use_k)
+        basis_a = mesh_a.basis.truncate(k_a)
+        basis_b = mesh_b.basis.truncate(k_b)
+
+        fmap12, fmap21 = self.fmap_module(basis_a, basis_b, desc_a, desc_b)
         p2p12 = p2p21 = None
         if not self.training:
-            p2p21 = self.converter(fmap12, mesh_a.basis, mesh_b.basis)
-            p2p12 = self.converter(fmap21, mesh_b.basis, mesh_a.basis)
+            p2p21 = self.converter(fmap12, basis_a, basis_b)
+            p2p12 = self.converter(fmap21, basis_b, basis_a)
 
         if as_dict:
             result = {
@@ -91,6 +101,10 @@ class FMNet(BaseModel):
                 "fmap21": fmap21,
                 "desc_a": desc_a,
                 "desc_b": desc_b,
+                "basis_a": basis_a,
+                "basis_b": basis_b,
+                "shape_a": mesh_a,
+                "shape_b": mesh_b,
             }
             if not self.training:
                 result.update({"p2p12": p2p12, "p2p21": p2p21})
@@ -112,6 +126,10 @@ class RobustFMNet(BaseModel):
         Feature extractor to use for the descriptors.
     fmap_module : ForwardFunctionalMap
         Functional map module to use for the forward pass.
+    fmap_size : int or tuple of int, optional
+        Number of eigenfunctions for the functional map, as (k_b, k_a).
+        A single int uses the same k for both shapes.
+        If None, uses the current ``use_k`` set on each shape's basis.
     converter : P2pFromFmConverter
         Converter to convert functional maps to point-to-point correspondences.
     """
@@ -120,6 +138,7 @@ class RobustFMNet(BaseModel):
         self,
         feature_extractor=FeatureExtractor.from_registry(which="diffusionnet"),
         fmap_module=ForwardFunctionalMap(),
+        fmap_size=None,
         converter=P2pFromFmConverter(SoftmaxNeighborFinder(n_neighbors=1, tau=0.07)),
     ):
         super(RobustFMNet, self).__init__()
@@ -129,6 +148,7 @@ class RobustFMNet(BaseModel):
             feature_extractor=self.feature_extractor
         )
         self.fmap_module = fmap_module
+        self.fmap_size = (fmap_size, fmap_size) if isinstance(fmap_size, int) else fmap_size
         self.converter = converter
         self.fmap_converter = FmFromP2pConverter(pseudo_inverse=True)
         self.neighbor_finder = self.converter.neighbor_finder
@@ -164,7 +184,11 @@ class RobustFMNet(BaseModel):
         desc_a = self.descriptors_module(mesh_a)
         desc_b = self.descriptors_module(mesh_b)
 
-        fmap12, fmap21 = self.fmap_module(mesh_a, mesh_b, desc_a, desc_b)
+        k_b, k_a = self.fmap_size if self.fmap_size else (mesh_b.basis.use_k, mesh_a.basis.use_k)
+        basis_a = mesh_a.basis.truncate(k_a)
+        basis_b = mesh_b.basis.truncate(k_b)
+
+        fmap12, fmap21 = self.fmap_module(basis_a, basis_b, desc_a, desc_b)
 
         desc_a = desc_a / gs.linalg.norm(desc_a, axis=0, keepdims=True)
         desc_b = desc_b / gs.linalg.norm(desc_b, axis=0, keepdims=True)
@@ -174,15 +198,15 @@ class RobustFMNet(BaseModel):
 
         p2p12 = p2p21 = None
 
-        fmap21_desc = mesh_a.basis.pinv @ (P12 @ mesh_b.basis.vecs)
-        fmap12_desc = mesh_b.basis.pinv @ (P21 @ mesh_a.basis.vecs)
+        fmap21_desc = basis_a.pinv @ (P12 @ basis_b.vecs)
+        fmap12_desc = basis_b.pinv @ (P21 @ basis_a.vecs)
 
         if not self.training:
             p2p21 = gs.to_device(
-                self.converter(fmap12, mesh_a.basis, mesh_b.basis), "cpu"
+                self.converter(fmap12, basis_a, basis_b), "cpu"
             )
             p2p12 = gs.to_device(
-                self.converter(fmap21, mesh_b.basis, mesh_a.basis), "cpu"
+                self.converter(fmap21, basis_b, basis_a), "cpu"
             )
 
         if as_dict:
@@ -191,6 +215,10 @@ class RobustFMNet(BaseModel):
                 "fmap21": fmap21,
                 "fmap12_desc": fmap12_desc,
                 "fmap21_desc": fmap21_desc,
+                "basis_a": basis_a,
+                "basis_b": basis_b,
+                "shape_a": mesh_a,
+                "shape_b": mesh_b,
             }
             if not self.training:
                 result.update({"p2p12": p2p12, "p2p21": p2p21})

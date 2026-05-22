@@ -96,10 +96,7 @@ class DeepFMMatcher(BaseMatcher):
             ``descr_a``, ``descr_b``.
         """
         k_b, k_a = self.fmap_size
-        shape_a.basis.use_k = k_a
-        shape_b.basis.use_k = k_b
-
-        device = shape_a.basis.vals.device
+        device = shape_a.basis.truncate(k_a).vals.device
         model = copy.deepcopy(self.model).to(device)
         model.train()
 
@@ -109,8 +106,7 @@ class DeepFMMatcher(BaseMatcher):
             optimizer.zero_grad()
 
             outputs = model(shape_a, shape_b, as_dict=True)
-            outputs["shape_a"] = shape_a
-            outputs["shape_b"] = shape_b
+            # shape_a/shape_b already in outputs; basis_a/basis_b emitted by model
 
             total_loss, loss_dict = self.loss_manager.compute_loss(outputs)
             total_loss.backward()

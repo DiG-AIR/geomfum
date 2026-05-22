@@ -86,15 +86,15 @@ class FunctionalMapMatcher(BaseMatcher):
         descr_a = self.descriptor_pipeline.apply(shape_a)
         descr_b = self.descriptor_pipeline.apply(shape_b)
 
-        # Step 2: Set spectrum size for functional map optimization
-        shape_a.basis.use_k = self.fmap_size
-        shape_b.basis.use_k = self.fmap_size
+        # Step 2: Get truncated basis views at fmap_size (no mutation of shape.basis.use_k)
+        basis_a = shape_a.basis.truncate(self.fmap_size)
+        basis_b = shape_b.basis.truncate(self.fmap_size)
 
         # Step 3: Optimize functional map (fmap12: A -> B)
-        fmap12 = self.fmap_optimizer(shape_a.basis, shape_b.basis, descr_a, descr_b)
+        fmap12 = self.fmap_optimizer(basis_a, basis_b, descr_a, descr_b)
 
         # Step 5: Convert to point-to-point correspondence (p2p21: B -> A)
-        p2p21 = self.p2p_converter(fmap12, shape_a.basis, shape_b.basis)
+        p2p21 = self.p2p_converter(fmap12, basis_a, basis_b)
 
         # Initialize reverse direction as None
         fmap21 = None
@@ -102,8 +102,8 @@ class FunctionalMapMatcher(BaseMatcher):
 
         # Step 6: Compute reverse direction if bidirectional
         if bidirectional:
-            fmap21 = self.fmap_optimizer(shape_b.basis, shape_a.basis, descr_b, descr_a)
-            p2p12 = self.p2p_converter(fmap21, shape_b.basis, shape_a.basis)
+            fmap21 = self.fmap_optimizer(basis_b, basis_a, descr_b, descr_a)
+            p2p12 = self.p2p_converter(fmap21, basis_b, basis_a)
 
         return CorrespondenceResult(
             fmap12=fmap12,
@@ -176,22 +176,29 @@ class ZoomOutMatcher(BaseMatcher):
         descr_a = self.descriptor_pipeline.apply(shape_a)
         descr_b = self.descriptor_pipeline.apply(shape_b)
 
-        # Step 2: Set spectrum size for functional map optimization
-        shape_a.basis.use_k = self.fmap_size[1]
-        shape_b.basis.use_k = self.fmap_size[0]
+        # Step 2: Get truncated basis views at fmap_size (no mutation of shape.basis.use_k)
+        basis_a = shape_a.basis.truncate(self.fmap_size[1])
+        basis_b = shape_b.basis.truncate(self.fmap_size[0])
 
         # Step 3: Optimize functional map (fmap12: A -> B)
-        fmap12 = self.fmap_optimizer(shape_a.basis, shape_b.basis, descr_a, descr_b)
+        fmap12 = self.fmap_optimizer(basis_a, basis_b, descr_a, descr_b)
 
-        #step 5: Refine functional map with ZoomOut
-        shape_a.basis.use_k = self.fmap_size[1] + self.refiner.nit * self.refiner.step[1]
-        shape_b.basis.use_k = self.fmap_size[0] + self.refiner.nit * self.refiner.step[0]
-        if shape_a.basis.full_vals.shape[0] < shape_a.basis.use_k or shape_b.basis.full_vals.shape[0] < shape_b.basis.use_k:
-            raise ValueError(f"Not enough eigenvalues computed for ZoomOut refinement. Required: {max(shape_a.basis.use_k, shape_b.basis.use_k)}, but got {shape_a.basis.full_vals.shape[0]} and {shape_b.basis.full_vals.shape[0]}. Consider increasing the number of eigenvalues computed for the shapes.")
-        fmap12_refined = self.refiner(fmap12, shape_a.basis, shape_b.basis)
+        # Step 4: Refine functional map with ZoomOut (larger k views)
+        zoom_k_a = self.fmap_size[1] + self.refiner.nit * self.refiner.step[1]
+        zoom_k_b = self.fmap_size[0] + self.refiner.nit * self.refiner.step[0]
+        if shape_a.basis.full_spectrum_size < zoom_k_a or shape_b.basis.full_spectrum_size < zoom_k_b:
+            raise ValueError(
+                f"Not enough eigenvalues computed for ZoomOut refinement. "
+                f"Required: ({zoom_k_b}, {zoom_k_a}), but got "
+                f"({shape_b.basis.full_spectrum_size}, {shape_a.basis.full_spectrum_size}). "
+                f"Consider increasing the number of eigenvalues computed for the shapes."
+            )
+        zoom_basis_a = shape_a.basis.truncate(zoom_k_a)
+        zoom_basis_b = shape_b.basis.truncate(zoom_k_b)
+        fmap12_refined = self.refiner(fmap12, zoom_basis_a, zoom_basis_b)
 
         # Step 5: Convert to point-to-point correspondence (p2p21: B -> A)
-        p2p21 = self.p2p_converter(fmap12_refined, shape_a.basis, shape_b.basis)
+        p2p21 = self.p2p_converter(fmap12_refined, zoom_basis_a, zoom_basis_b)
 
         # Initialize reverse direction as None
         fmap21 = None
@@ -199,9 +206,9 @@ class ZoomOutMatcher(BaseMatcher):
 
         # Step 6: Compute reverse direction if bidirectional
         if bidirectional:
-            fmap21 = self.fmap_optimizer(shape_b.basis, shape_a.basis, descr_b, descr_a)
-            fmap21_refined = self.refiner(fmap21, shape_b.basis, shape_a.basis)
-            p2p12 = self.p2p_converter(fmap21_refined, shape_b.basis, shape_a.basis)
+            fmap21 = self.fmap_optimizer(basis_b, basis_a, descr_b, descr_a)
+            fmap21_refined = self.refiner(fmap21, zoom_basis_b, zoom_basis_a)
+            p2p12 = self.p2p_converter(fmap21_refined, zoom_basis_b, zoom_basis_a)
 
         
         return CorrespondenceResult(

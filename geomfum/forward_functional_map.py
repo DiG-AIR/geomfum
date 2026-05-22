@@ -17,16 +17,13 @@ class ForwardFunctionalMap(abc.ABC, nn.Module):
         Resolvant of the regularized functional map (default: 1).
     bijective: bool
         Whether we compute the map in both the directions (default: True).
-    fmap_shape: tuple, optional
-        Shape of fmap12, i.e (spectrum_size_b, spectrum_size_a). If None, the shape is inferred from the input shapes.
     """
 
-    def __init__(self, lmbda=1e3, resolvent_gamma=1, bijective=True, fmap_shape=None):
+    def __init__(self, lmbda=1e3, resolvent_gamma=1, bidirectional=True):
         super(ForwardFunctionalMap, self).__init__()
         self.lmbda = lmbda
         self.resolvent_gamma = resolvent_gamma
-        self.bijective = bijective
-        self.fmap_shape = fmap_shape
+        self.bidirectional = bidirectional
 
     def _compute_functional_map(self, sdescr_a, sdescr_b, mask):
         """Compute the functional map between two shapes.
@@ -63,43 +60,35 @@ class ForwardFunctionalMap(abc.ABC, nn.Module):
 
         return fmap
 
-    def __call__(self, mesh_a, mesh_b, descr_a, descr_b):
+    def __call__(self, basis_a, basis_b, descr_a, descr_b):
         """Compute the functional map between two shapes.
 
         Parameters
         ----------
-        mesh_a : TriangleMesh
-            Mesh object representing the first shape.
-        mesh_b : TriangleMesh
-            Mesh object representing the second shape.
-        descr_a : array-like, shape=[D, ...]
-            Spectral descriptors on the first shape.
-        descr_b : array-like, shape=[D, ...]
-            Spectral descriptors on the second shape.
+        basis_a : EigenBasis
+            Basis of the first shape, already truncated to the desired k.
+        basis_b : EigenBasis
+            Basis of the second shape, already truncated to the desired k.
+        descr_a : array-like, shape=[D, n_verts_a]
+            Descriptors on the first shape.
+        descr_b : array-like, shape=[D, n_verts_b]
+            Descriptors on the second shape.
 
         Returns
         -------
-        fmap_12 : array-like, shape[spectrum_size_b, spectrum_size_a]
+        fmap_12 : array-like, shape=[spectrum_size_b, spectrum_size_a]
             Functional map from shape a to shape b.
-        fmap_21: array-like, shape=[spectrum_size_a, spectrum_size_b] or None
+        fmap_21 : array-like, shape=[spectrum_size_a, spectrum_size_b] or None
             Functional map from shape b to shape a if bijective, otherwise None.
         """
-        if self.fmap_shape is not None:
-            mesh_a.basis.use_k = self.fmap_shape[1]
-            mesh_b.basis.use_k = self.fmap_shape[0]
+        sdescr_a = basis_a.project(descr_a)
+        sdescr_b = basis_b.project(descr_b)
 
-        sdescr_a = mesh_a.basis.project(descr_a)
-        sdescr_b = mesh_b.basis.project(descr_b)
-
-        mask = self._compute_mask(
-            mesh_a.basis.vals, mesh_b.basis.vals, self.resolvent_gamma
-        )
+        mask = self._compute_mask(basis_a.vals, basis_b.vals, self.resolvent_gamma)
         fmap_12 = self._compute_functional_map(sdescr_a, sdescr_b, mask)
         fmap_21 = None
-        if self.bijective:
-            mask = self._compute_mask(
-                mesh_b.basis.vals, mesh_a.basis.vals, self.resolvent_gamma
-            )
+        if self.bidirectional:
+            mask = self._compute_mask(basis_b.vals, basis_a.vals, self.resolvent_gamma)
             fmap_21 = self._compute_functional_map(sdescr_b, sdescr_a, mask)
         return fmap_12, fmap_21
 

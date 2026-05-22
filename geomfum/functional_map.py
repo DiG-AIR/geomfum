@@ -235,12 +235,20 @@ class OperatorCommutativityEnforcing(WeightedFactor):
         return basis.pinv @ la.rowwise_scaling(descr, basis.vecs)
 
     @staticmethod
-    def compute_orientation_operator(shape, descr, reversing=False, normalize=False):
+    def compute_orientation_operator(
+        shape, basis, descr, reversing=False, normalize=False
+    ):
         """
         Compute orientation preserving or reversing operators associated to each descriptor.
 
         Parameters
         ----------
+        shape : Shape
+            Shape providing geometry (gradient, orientation operators).
+        basis : EigenBasis
+            Basis at the desired k (pass ``shape.basis.truncate(k)`` for explicit k).
+        descr : array-like
+            Descriptors.
         reversing : bool
             whether to return operators associated to orientation inversion instead
                     of orientation preservation (return the opposite of the second operator)
@@ -255,7 +263,7 @@ class OperatorCommutativityEnforcing(WeightedFactor):
             (k2,k2) which represent operators supposed to commute.
         """
         # Precompute the inverse of the eigenvectors matrix
-        pinv = shape.basis.pinv  # (k1,n)
+        pinv = basis.pinv
 
         # Compute the gradient of each descriptor
         grads = shape.face_valued_gradient(descr)
@@ -267,11 +275,9 @@ class OperatorCommutativityEnforcing(WeightedFactor):
 
         orients = shape.face_orientation_operator(grads)
         if descr.ndim > 1:
-            return gs.stack(
-                [sign * pinv @ orient @ shape.basis.vecs for orient in orients]
-            )
+            return gs.stack([sign * pinv @ orient @ basis.vecs for orient in orients])
 
-        return sign * pinv @ orients @ shape.basis.vecs
+        return sign * pinv @ orients @ basis.vecs
 
     @classmethod
     def from_multiplication(cls, basis_a, descr_a, basis_b, descr_b, weight=1.0):
@@ -297,8 +303,10 @@ class OperatorCommutativityEnforcing(WeightedFactor):
     def from_orientation(
         cls,
         shape_a,
+        basis_a,
         descr_a,
         shape_b,
+        basis_b,
         descr_b,
         reversing_a=False,
         reversing_b=False,
@@ -310,12 +318,16 @@ class OperatorCommutativityEnforcing(WeightedFactor):
 
         Parameters
         ----------
-        basis_a : Basis
-            Basis of the source shape.
+        shape_a : Shape
+            Source shape (provides geometry for gradient/orientation operators).
+        basis_a : EigenBasis
+            Basis of the source shape at the desired k.
         descr_a : array-like, shape=[..., n_vertices]
             descriptor for the source shape.
-        basis_b : Basis
-            Basis of the target shape.
+        shape_b : Shape
+            Target shape (provides geometry for gradient/orientation operators).
+        basis_b : EigenBasis
+            Basis of the target shape at the desired k.
         descr_b : array-like, shape=[..., n_vertices]
             descriptor for the target shape.
         reversing_a : bool
@@ -332,10 +344,10 @@ class OperatorCommutativityEnforcing(WeightedFactor):
 
         """
         oper_a = cls.compute_orientation_operator(
-            shape_a, descr_a, reversing=reversing_a, normalize=normalize
+            shape_a, basis_a, descr_a, reversing=reversing_a, normalize=normalize
         )
         oper_b = cls.compute_orientation_operator(
-            shape_b, descr_b, reversing=reversing_b, normalize=normalize
+            shape_b, basis_b, descr_b, reversing=reversing_b, normalize=normalize
         )
         return OperatorCommutativityEnforcing(oper_a, oper_b, weight=weight)
 
@@ -501,7 +513,7 @@ class LBCFactorBuilder(FactorBuilder):
     def __init__(self, weight=1e-2):
         super(LBCFactorBuilder, self).__init__(weight=weight)
 
-    def build(self, basis_a, basis_b, descr_a, descr_b):
+    def build(self, basis_a, basis_b, _descr_a, _descr_b):
         """Build LBCommutativityEnforcing from bases.
 
         Parameters
@@ -510,10 +522,10 @@ class LBCFactorBuilder(FactorBuilder):
             Basis of source shape.
         basis_b : LaplaceEigenBasis
             Basis of target shape.
-        descr_a : array-like
-            Descriptors on source shape (ignored, for uniform interface).
-        descr_b : array-like
-            Descriptors on target shape (ignored, for uniform interface).
+        _descr_a : array-like
+            Unused; kept for uniform interface with other builders.
+        _descr_b : array-like
+            Unused; kept for uniform interface with other builders.
 
         Returns
         -------
@@ -568,6 +580,9 @@ class FunctionalMap:
     Takes factor_builders as configuration, then optimizes fmap given shapes/descriptors.
     This is an intermediate abstraction between FactorBuilders and the high-level Matcher.
 
+    The k used for the functional map is implicit in the spectrum size of the bases
+    passed to ``__call__``; callers are responsible for truncating them beforehand.
+
     Parameters
     ----------
     factor_builders : list[FactorBuilder], optional
@@ -576,8 +591,7 @@ class FunctionalMap:
         Optimizer to use. If None, uses L-BFGS-B.
     """
 
-    def __init__(self, fmap_size=None, factor_builders=None, optimizer=None):
-        self.fmap_size = fmap_size
+    def __init__(self, factor_builders=None, optimizer=None):
         self.factor_builders = factor_builders or self._default_factor_builders()
         self.optimizer = optimizer or ScipyMinimize(method="L-BFGS-B")
 
@@ -614,12 +628,6 @@ class FunctionalMap:
         fmap_matrix : array-like, shape=[spectrum_size_b, spectrum_size_a]
             Optimized functional map matrix.
         """
-        if self.fmap_size is not None:
-            if basis_a.spectrum_size != self.fmap_size[1]:
-                basis_a.use_k = self.fmap_size[1]
-            if basis_b.spectrum_size != self.fmap_size[0]:
-                basis_b.use_k = self.fmap_size[0]
-
         # Build factors from builders
         objective = self._build_factor_sum(
             self.factor_builders, basis_a, basis_b, descr_a, descr_b
