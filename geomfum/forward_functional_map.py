@@ -3,7 +3,6 @@
 import abc
 
 import gsops.backend as gs
-import torch
 import torch.nn as nn
 
 
