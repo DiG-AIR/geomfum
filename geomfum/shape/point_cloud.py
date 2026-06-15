@@ -38,6 +38,21 @@ class PointCloud(Shape):
         self._dist_matrix = None
         self.metric = None
 
+    def _to(self, device):
+        if self._vertex_normals is not None:
+            self._vertex_normals = gs.to_device(self._vertex_normals, device)
+        if self._vertex_tangent_frames is not None:
+            self._vertex_tangent_frames = gs.to_device(
+                self._vertex_tangent_frames, device
+            )
+        if self._edge_tangent_vectors is not None:
+            self._edge_tangent_vectors = gs.to_device(
+                self._edge_tangent_vectors, device
+            )
+        # _knn_graph stays as CPU numpy (sklearn); _edges recomputes from it
+        self._edges = None
+        self._dist_matrix = None
+
     @classmethod
     def from_file(cls, filename):
         """Load point cloud from file.
@@ -101,8 +116,10 @@ class PointCloud(Shape):
             Normalized per-vertex normals estimated from local neighborhoods using PCA.
         """
         if self._vertex_normals is None:
+            # knn_graph indices are numpy (sklearn); force vertices to CPU too.
+            vertices_cpu = gs.to_device(self.vertices, "cpu")
             neighbor_indices = gs.array(self.knn_graph["indices"])
-            all_neighborhoods = self.vertices[neighbor_indices]
+            all_neighborhoods = vertices_cpu[neighbor_indices]
             centroids = gs.mean(all_neighborhoods, axis=1)
             local_neighborhoods = all_neighborhoods - centroids[:, None, :]
             cov_matrices = gs.einsum(
@@ -112,11 +129,11 @@ class PointCloud(Shape):
                 _, _, v = gs.linalg.svd(cov_matrices)
                 normals = v[:, :, 2]
             except Exception:
-                normals = gs.zeros_like(self.vertices)
+                normals = gs.zeros_like(vertices_cpu)
                 normals[:, 2] = 1.0
 
             # orient normals consistently, if normal is more aligned with inward direction, flip it
-            neighbor_vectors = all_neighborhoods - self.vertices[:, None, :]
+            neighbor_vectors = all_neighborhoods - vertices_cpu[:, None, :]
             avg_neighbor_direction = gs.mean(neighbor_vectors, axis=1)
             dot_products = gs.sum(normals * avg_neighbor_direction, axis=1)
             flip_mask = dot_products > 0
@@ -126,7 +143,7 @@ class PointCloud(Shape):
             norms = gs.linalg.norm(normals, axis=1, keepdims=True)
             normals = normals / (norms + 1e-12)
 
-            self._vertex_normals = normals
+            self._vertex_normals = gs.to_device(normals, self.device)
 
         return self._vertex_normals
 

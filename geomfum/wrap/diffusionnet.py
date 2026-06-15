@@ -208,7 +208,7 @@ class DiffusionnetFeatureExtractor(BaseFeatureExtractor, nn.Module):
         L, M = mesh.laplacian.find()
         evals, evecs = mesh.laplacian.find_spectrum(spectrum_size=k)
         grad = mesh.gradient.gradient_matrix
-        grad_scipy = gs.sparse.to_scipy_csc(grad)
+        grad_scipy = gs.sparse.to_scipy_csc(gs.to_device(grad, "cpu"))
         frames = gs.to_torch(frames)
         massvec = torch.tensor(gs.sparse.to_scipy_csc(M).diagonal()).to(
             device=self.device, dtype=torch.float32
