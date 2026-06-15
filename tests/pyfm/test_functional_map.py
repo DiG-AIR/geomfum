@@ -106,7 +106,7 @@ def factors(request):
 
     elif factor_type == "operator_commutativity-orientation":
         factor_a = OperatorCommutativityEnforcing.from_orientation(
-            shape_a, descr_a[0], shape_b, descr_b[0]
+            shape_a, shape_a.basis, descr_a[0], shape_b, shape_b.basis, descr_b[0]
         )
         factor_b = PyfmOpCommutation(factor_a.oper_a, factor_a.oper_b)
     else:

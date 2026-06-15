@@ -178,9 +178,9 @@ class LaplacianCommutativityLoss(nn.Module):
         self.weight = weight
         self.metric = SquaredFrobeniusLoss()
 
-    required_inputs = ["fmap12", "fmap21", "shape_a", "shape_b"]
+    required_inputs = ["fmap12", "fmap21", "basis_a", "basis_b"]
 
-    def forward(self, fmap12, fmap21, shape_a, shape_b):
+    def forward(self, fmap12, fmap21, basis_a, basis_b):
         """
         Forward pass.
 
@@ -188,22 +188,28 @@ class LaplacianCommutativityLoss(nn.Module):
         ----------
         fmap12 : torch.Tensor
             Functional map tensor from source to target shape, of shape ( spectrum_size_b, spectrum_size_a ).
-        shape_a : Shape
-            Shape object containing source shape information.
-        shape_b : Shape
-            Shape object containing target shape information.
+        basis_a : EigenBasis
+            Basis of shape A at the k used for the functional map.
+        basis_b : EigenBasis
+            Basis of shape B at the k used for the functional map.
 
         Returns
         -------
         torch.Tensor
             Scalar tensor representing the weighted squared Frobenius norm of the Laplacian commutativity error.
         """
+        val_a = basis_a.vals
+        val_b = basis_b.vals
         return self.weight * self.metric(
-            torch.einsum("bc,c->bc", fmap12, shape_b.basis.vals),
-            torch.einsum("b,bc->bc", shape_a.basis.vals, fmap12),
+            torch.einsum(
+                "bc,c->bc",
+                fmap12,
+                val_b,
+            ),
+            torch.einsum("b,bc->bc", val_a, fmap12),
         ) + self.weight * self.metric(
-            torch.einsum("bc,c->bc", fmap21, shape_a.basis.vals),
-            torch.einsum("b,bc->bc", shape_b.basis.vals, fmap21),
+            torch.einsum("bc,c->bc", fmap21, val_a),
+            torch.einsum("b,bc->bc", val_b, fmap21),
         )
 
 
@@ -262,7 +268,7 @@ class DescriptorCommutativityLoss(nn.Module):
         self.weight = weight
         self.metric = SquaredFrobeniusLoss()
 
-    required_inputs = ["fmap12", "fmap21", "desc_a", "desc_b", "shape_a", "shape_b"]
+    required_inputs = ["fmap12", "fmap21", "desc_a", "desc_b", "basis_a", "basis_b"]
 
     def _compute_multiplication_operators(self, basis, desc):
         """
@@ -283,7 +289,6 @@ class DescriptorCommutativityLoss(nn.Module):
         # desc: (num_vertices, num_descriptors)
         # basis.vecs: (num_vertices, spectrum_size)
         # basis.pinv: (spectrum_size, num_vertices)
-
         operators = []
         for desc_i in desc:
             operator = basis.pinv @ la.rowwise_scaling(desc_i, basis.vecs)
@@ -291,7 +296,7 @@ class DescriptorCommutativityLoss(nn.Module):
 
         return torch.stack(operators)  # (num_descriptors, spectrum_size, spectrum_size)
 
-    def forward(self, fmap12, fmap21, desc_a, desc_b, shape_a, shape_b):
+    def forward(self, fmap12, fmap21, desc_a, desc_b, basis_a, basis_b):
         """
         Forward pass.
 
@@ -305,10 +310,10 @@ class DescriptorCommutativityLoss(nn.Module):
             Descriptors for shape A of shape (num_vertices_a, num_descriptors).
         desc_b : torch.Tensor
             Descriptors for shape B of shape (num_vertices_b, num_descriptors).
-        shape_a : TriangleMesh or PointCloud
-            TriangleMesh object containing source shape information.
-        shape_b : TriangleMesh or PointCloud
-            TriangleMesh object containing target shape information.
+        basis_a : EigenBasis
+            Basis of shape A at the k used for the functional map.
+        basis_b : EigenBasis
+            Basis of shape B at the k used for the functional map.
 
         Returns
         -------
@@ -316,8 +321,8 @@ class DescriptorCommutativityLoss(nn.Module):
             Scalar tensor representing the weighted descriptor commutativity loss.
         """
         # Compute multiplication operators for each descriptor
-        oper_a = self._compute_multiplication_operators(shape_a.basis, desc_a)
-        oper_b = self._compute_multiplication_operators(shape_b.basis, desc_b)
+        oper_a = self._compute_multiplication_operators(basis_a, desc_a)
+        oper_b = self._compute_multiplication_operators(basis_b, desc_b)
 
         total_loss = 0
         # Compute commutativity loss for each descriptor
@@ -359,17 +364,17 @@ class GroundTruthSupervisionLoss(nn.Module):
         self.weight = weight
         self.metric = SquaredFrobeniusLoss()
 
-    required_inputs = ["fmap12", "fmap21", "shape_a", "shape_b", "corr_a", "corr_b"]
+    required_inputs = ["fmap12", "fmap21", "basis_a", "basis_b", "corr_a", "corr_b"]
 
-    def _compute_ground_truth_map(self, shape_a, shape_b, corr_a, corr_b):
+    def _compute_ground_truth_map(self, basis_a, basis_b, corr_a, corr_b):
         """Compute the ground truth functional maps.
 
         Parameters
         ----------
-        shape_a : TriangleMesh
-            TriangleMesh object containing source shape information.
-        shape_b : TriangleMesh
-            TriangleMesh object containing target shape information.
+        basis_a : EigenBasis
+            Basis of shape A at the k used for the functional map.
+        basis_b : EigenBasis
+            Basis of shape B at the k used for the functional map.
         corr_a : torch.Tensor
             Indices of source correspondences.
         corr_b : torch.Tensor
@@ -380,13 +385,15 @@ class GroundTruthSupervisionLoss(nn.Module):
         fmap12_gt ,fmap21_gt : torch.Tensor
             Ground truth functional maps from shape 1 to shape 2 and from shape 2 to shape 1.
         """
-        fmap12_gt = shape_b.basis.pinv[:, corr_b] @ shape_a.basis.vecs[corr_a, :]
+        # corr indices stay on CPU; do indexing on CPU to avoid device conflicts,
+        # then move results to the caller's device via .to() in forward().
 
-        fmap21_gt = shape_a.basis.pinv[:, corr_a] @ shape_b.basis.vecs[corr_b, :]
+        fmap12_gt = basis_b.pinv[:, corr_b] @ basis_a.vecs[corr_a, :]
+        fmap21_gt = basis_a.pinv[:, corr_a] @ basis_b.vecs[corr_b, :]
 
         return fmap12_gt, fmap21_gt
 
-    def forward(self, fmap12, fmap21, shape_a, shape_b, corr_a, corr_b):
+    def forward(self, fmap12, fmap21, basis_a, basis_b, corr_a, corr_b):
         """
         Forward pass.
 
@@ -396,10 +403,10 @@ class GroundTruthSupervisionLoss(nn.Module):
             Functional map tensor from shape 1 to shape 2 of shape (spectrum_size_b, spectrum_size_a).
         fmap21 : torch.Tensor
             Functional map tensor from shape 2 to shape 1 of shape (spectrum_size_a, spectrum_size_b).
-        shape_a : TriangleMesh
-            TriangleMesh object containing source shape information.
-        shape_b : TriangleMesh
-            TriangleMesh object containing target shape information.
+        basis_a : EigenBasis
+            Basis of shape A at the k used for the functional map.
+        basis_b : EigenBasis
+            Basis of shape B at the k used for the functional map.
         corr_a : torch.Tensor
             Indices of source correspondences.
         corr_b : torch.Tensor
@@ -411,11 +418,11 @@ class GroundTruthSupervisionLoss(nn.Module):
             Scalar tensor representing the weighted mean squared Frobenius norm between fmap12 and the ground truth functional map, and between fmap21 and the ground truth functional map.
         """
         fmap12_gt, fmap21_gt = self._compute_ground_truth_map(
-            shape_a, shape_b, corr_a, corr_b
+            basis_a, basis_b, corr_a, corr_b
         )
-        return self.weight * self.metric(fmap12, fmap12_gt) + self.weight * self.metric(
-            fmap21, fmap21_gt
-        )
+        return self.weight * self.metric(
+            fmap12, fmap12_gt.to(fmap12.device)
+        ) + self.weight * self.metric(fmap21, fmap21_gt.to(fmap21.device))
 
 
 class FmapDescriptorsSupervisionLoss(nn.Module):
@@ -479,9 +486,9 @@ class SpectralDescriptorPreservationLoss(nn.Module):
         self.weight = weight
         self.metric = SquaredFrobeniusLoss()
 
-    required_inputs = ["fmap12", "fmap21", "desc_a", "desc_b", "shape_a", "shape_b"]
+    required_inputs = ["fmap12", "fmap21", "desc_a", "desc_b", "basis_a", "basis_b"]
 
-    def forward(self, fmap12, fmap21, desc_a, desc_b, shape_a, shape_b):
+    def forward(self, fmap12, fmap21, desc_a, desc_b, basis_a, basis_b):
         """
         Forward pass.
 
@@ -495,10 +502,10 @@ class SpectralDescriptorPreservationLoss(nn.Module):
             Descriptors on shape A, shape (n_descr, n_verts_a).
         desc_b : torch.Tensor
             Descriptors on shape B, shape (n_descr, n_verts_b).
-        shape_a : Shape
-            Shape A (provides the spectral basis for projection).
-        shape_b : Shape
-            Shape B (provides the spectral basis for projection).
+        basis_a : EigenBasis
+            Basis of shape A at the k used for the functional map.
+        basis_b : EigenBasis
+            Basis of shape B at the k used for the functional map.
 
         Returns
         -------
@@ -506,8 +513,8 @@ class SpectralDescriptorPreservationLoss(nn.Module):
             Scalar weighted loss.
         """
         # phi_x : (n_descr, k_x)  — spectral coefficients of each descriptor
-        phi_a = shape_a.basis.project(desc_a)
-        phi_b = shape_b.basis.project(desc_b)
+        phi_a = basis_a.project(desc_a)
+        phi_b = basis_b.project(desc_b)
         # fmap12 @ phi_a.T : (k_b, n_descr)  vs  phi_b.T : (k_b, n_descr)
         return self.weight * (
             self.metric(fmap12 @ phi_a.T, phi_b.T)

@@ -69,9 +69,9 @@ class SpectralDescriptor(Descriptor, abc.ABC):
                     shape.laplacian._mass_matrix, device
                 )
 
-            shape.basis.use_k = self.k
-        vals = shape.basis.vals
-        vecs = shape.basis.vecs
+        basis = shape.basis.truncate(self.k) if self.k is not None else shape.basis
+        vals = basis.vals
+        vecs = basis.vecs
 
         domain, sigma = (
             self.domain(shape) if callable(self.domain) else (self.domain, self.sigma)

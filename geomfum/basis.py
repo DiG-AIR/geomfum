@@ -3,6 +3,7 @@
 import abc
 
 import gsops.backend as gs
+import torch
 
 import geomfum.linalg as la
 
@@ -31,6 +32,11 @@ class EigenBasis(Basis):
 
         # NB: assumes sorted
         self._n_zeros = gs.sum(gs.isclose(vals, 0.0, atol=1e-3))
+
+    @property
+    def device(self):
+        """Device of the basis, inferred from eigenvalues."""
+        return getattr(self.full_vals, "device", torch.device("cpu"))
 
     @property
     def vals(self):
@@ -137,6 +143,15 @@ class LaplaceEigenBasis(EigenBasis):
         self._shape = shape
 
         self._pinv = None
+
+    def to(self, device):
+        """Move eigenvalues, eigenvectors, and cached pinv to ``device``."""
+        self.full_vals = gs.to_device(self.full_vals, device)
+        self.full_vecs = gs.to_device(self.full_vecs, device)
+        # pinv = vecs.T @ mass_matrix; invalidate so it recomputes from the
+        # already-moved components on next access.
+        self._pinv = None
+        return self
 
     @property
     def use_k(self):
