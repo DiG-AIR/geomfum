@@ -375,6 +375,23 @@ class PreciseGeodesicDistanceMetricRegistry(Registry):
     MAP = {}
 
 
+class FunctionalMapMatcherRegistry(Registry):
+    # geomfum ships its own FunctionalMapMatcher, so the internal implementation
+    # is the default; external libraries (e.g. pyFM) register alternative
+    # implementations under their own key.
+    has_internal = True
+    default = "geomfum"
+    MAP = {}
+
+
+class ZoomOutMatcherRegistry(Registry):
+    # Same pattern as FunctionalMapMatcherRegistry, for the ZoomOut-refined
+    # functional map matcher.
+    has_internal = True
+    default = "geomfum"
+    MAP = {}
+
+
 def _create_register_funcs(module):
     """Create ``register`` functions for each class registry in this module.
 

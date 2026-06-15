@@ -2,6 +2,7 @@
 
 import gsops.backend as gs
 import numpy as np
+import pyFM.functional
 import pyFM.mesh
 import pyFM.mesh.geometry
 import pyFM.signatures
@@ -9,6 +10,7 @@ import pyFM.signatures
 from geomfum.descriptor._base import SpectralDescriptor
 from geomfum.descriptor.spectral import WksDefaultDomain, hks_default_domain
 from geomfum.laplacian import BaseLaplacianFinder
+from geomfum.matcher.base import BaseMatcher, CorrespondenceResult
 from geomfum.operator import FunctionalOperator, VectorFieldOperator
 from geomfum.sample import BaseSampler
 
@@ -473,4 +475,210 @@ class PyfmEuclideanFarthestVertexSampler(BaseSampler):
             self.min_n_samples,
             n_points=shape.n_vertices,
             verbose=False,
+        )
+
+
+class PyfmFunctionalMapMatcher(BaseMatcher):
+    """Reference functional-map matcher wrapping pyFM's ``FunctionalMapping``.
+
+    Registered under the ``"pyfm"`` key of
+    :class:`~geomfum.matcher.fmap.FunctionalMapMatcher`. Build it with
+    ``FunctionalMapMatcher.from_registry(which="pyfm", ...)``.
+
+    It exposes the canonical functional-map pipeline of Ovsjanikov et al.
+    (2012), as implemented in pyFM, through geomfum's :class:`BaseMatcher`
+    contract so it can be dropped into the same evaluation framework as the
+    geomfum-native matchers.
+
+    The whole pipeline (Laplacian spectrum, WKS/HKS descriptors, energy
+    optimization, optional ICP/ZoomOut refinement and the final point-to-point
+    conversion) is delegated to pyFM. Nothing here touches geomfum's basis or
+    descriptor machinery, so this matcher doubles as an *independent
+    cross-check* of geomfum's own ``FunctionalMapMatcher`` (``which="geomfum"``):
+    the two should produce comparable maps on the same pair.
+
+    Orientation follows geomfum's convention: ``shape_a`` is pyFM ``mesh1`` and
+    ``shape_b`` is pyFM ``mesh2``, so ``fmap12`` is pyFM's ``FM`` (shape
+    ``[k_b, k_a]``) and ``p2p21`` is pyFM's ``p2p_21`` (for each vertex of
+    ``shape_b``, the matched vertex index in ``shape_a``).
+
+    Parameters
+    ----------
+    fmap_size : int or tuple of int
+        Number of LBO eigenfunctions ``(k_a, k_b)``. A single int uses the same
+        size for both shapes.
+    n_descr : int
+        Number of WKS/HKS descriptor functions computed before subsampling.
+    descr_type : str
+        Descriptor family, ``"WKS"`` or ``"HKS"``.
+    subsample_step : int
+        Step used to subsample descriptors (pyFM ``subsample_step``).
+    k_process : int, optional
+        Number of eigenpairs pyFM precomputes. Defaults to pyFM's own default
+        (200). Lower it to speed up small-budget runs; it must be at least as
+        large as the final spectrum size used by ZoomOut refinement.
+    w_descr, w_lap, w_dcomm, w_orient : float
+        Energy weights for descriptor preservation, Laplacian commutativity,
+        descriptor-operator commutativity and orientation preservation. Defaults
+        mirror pyFM's own defaults.
+    orient_reversing : bool
+        Use the orientation-reversing term instead of orientation-preserving
+        (e.g. for shapes related by a mirror symmetry).
+    optinit : str
+        Functional-map initialization: ``"zeros"``, ``"identity"`` or
+        ``"random"``.
+    refine : str or None
+        Optional refinement applied after the fit: ``None``, ``"icp"`` or
+        ``"zoomout"``.
+    refine_kwargs : dict, optional
+        Extra keyword args forwarded to pyFM's ``icp_refine`` /
+        ``zoomout_refine`` (e.g. ``{"nit": 10, "step": 1}`` for ZoomOut).
+    use_landmarks : bool
+        If True and both shapes carry ``landmark_indices``, pass them to pyFM as
+        matched landmark descriptors.
+    verbose : bool
+        Forward pyFM verbosity.
+    """
+
+    def __init__(
+        self,
+        fmap_size=30,
+        n_descr=100,
+        descr_type="WKS",
+        subsample_step=5,
+        k_process=None,
+        w_descr=1e-1,
+        w_lap=1e-3,
+        w_dcomm=1.0,
+        w_orient=0.0,
+        orient_reversing=False,
+        optinit="zeros",
+        refine=None,
+        refine_kwargs=None,
+        use_landmarks=False,
+        verbose=False,
+    ):
+        if isinstance(fmap_size, int):
+            fmap_size = (fmap_size, fmap_size)
+        if refine not in (None, "icp", "zoomout"):
+            raise ValueError(
+                f'refine must be None, "icp" or "zoomout", not {refine!r}'
+            )
+        self.fmap_size = tuple(fmap_size)
+        self.n_descr = n_descr
+        self.descr_type = descr_type
+        self.subsample_step = subsample_step
+        self.k_process = k_process
+        self.w_descr = w_descr
+        self.w_lap = w_lap
+        self.w_dcomm = w_dcomm
+        self.w_orient = w_orient
+        self.orient_reversing = orient_reversing
+        self.optinit = optinit
+        self.refine = refine
+        self.refine_kwargs = refine_kwargs or {}
+        self.use_landmarks = use_landmarks
+        self.verbose = verbose
+
+    def _to_trimesh(self, shape):
+        """Build a pyFM ``TriMesh`` from a geomfum shape (CPU numpy)."""
+        vertices = gs.to_numpy(gs.to_device(shape.vertices, "cpu"))
+        faces = gs.to_numpy(gs.to_device(shape.faces, "cpu"))
+        return pyFM.mesh.TriMesh(vertices, faces)
+
+    def _landmarks(self, shape_a, shape_b):
+        """Stack per-shape landmark indices into pyFM's ``(p, 2)`` format."""
+        lmk_a = getattr(shape_a, "landmark_indices", None)
+        lmk_b = getattr(shape_b, "landmark_indices", None)
+        if not self.use_landmarks or lmk_a is None or lmk_b is None:
+            return None
+        return np.stack(
+            [np.asarray(lmk_a).reshape(-1), np.asarray(lmk_b).reshape(-1)], axis=1
+        )
+
+    def __call__(self, shape_a, shape_b):
+        """Compute correspondence between two shapes via pyFM.
+
+        Parameters
+        ----------
+        shape_a : Shape
+            First shape (target for ``p2p21``; pyFM ``mesh1``).
+        shape_b : Shape
+            Second shape (source for ``p2p21``; pyFM ``mesh2``).
+
+        Returns
+        -------
+        result : CorrespondenceResult
+            Contains ``fmap12`` (``[k_b, k_a]``), ``p2p21`` (``[n_vertices_b]``)
+            and the subsampled, normalized descriptors ``descr_a`` / ``descr_b``.
+        """
+        mesh1 = self._to_trimesh(shape_a)
+        mesh2 = self._to_trimesh(shape_b)
+
+        model = pyFM.functional.FunctionalMapping(mesh1, mesh2)
+        model.preprocess(
+            n_ev=self.fmap_size,
+            n_descr=self.n_descr,
+            descr_type=self.descr_type,
+            landmarks=self._landmarks(shape_a, shape_b),
+            subsample_step=self.subsample_step,
+            k_process=self.k_process,
+            verbose=self.verbose,
+        )
+        model.fit(
+            w_descr=self.w_descr,
+            w_lap=self.w_lap,
+            w_dcomm=self.w_dcomm,
+            w_orient=self.w_orient,
+            orient_reversing=self.orient_reversing,
+            optinit=self.optinit,
+            verbose=self.verbose,
+        )
+
+        if self.refine == "icp":
+            model.icp_refine(verbose=self.verbose, **self.refine_kwargs)
+        elif self.refine == "zoomout":
+            model.zoomout_refine(verbose=self.verbose, **self.refine_kwargs)
+
+        fmap12 = np.asarray(model.FM)  # (k_b, k_a)
+        p2p21 = np.asarray(model.get_p2p())  # (n_b,) maps b -> a
+
+        return CorrespondenceResult(
+            fmap12=gs.from_numpy(fmap12),
+            p2p21=gs.from_numpy(p2p21),
+            descr_a=gs.from_numpy(model.descr1.T),
+            descr_b=gs.from_numpy(model.descr2.T),
+        )
+
+
+class PyfmZoomOutMatcher(PyfmFunctionalMapMatcher):
+    """pyFM functional map matcher with ZoomOut refinement (Melzi et al. 2019).
+
+    Registered under the ``"pyfm"`` key of
+    :class:`~geomfum.matcher.fmap.ZoomOutMatcher`. Build it with
+    ``ZoomOutMatcher.from_registry(which="pyfm", ...)``.
+
+    Identical to :class:`PyfmFunctionalMapMatcher` but with ZoomOut spectral
+    upsampling applied after the initial fit. ``nit`` and ``step`` control the
+    refinement (forwarded to pyFM's ``zoomout_refine``); all other keyword
+    arguments are forwarded to :class:`PyfmFunctionalMapMatcher`.
+
+    Parameters
+    ----------
+    fmap_size : int or tuple of int
+        Initial number of LBO eigenfunctions, before refinement.
+    nit : int
+        Number of ZoomOut iterations.
+    step : int
+        Spectral upsampling step per iteration.
+    """
+
+    def __init__(self, fmap_size=30, nit=10, step=1, **kwargs):
+        kwargs.pop("refine", None)
+        refine_kwargs = kwargs.pop("refine_kwargs", None) or {"nit": nit, "step": step}
+        super().__init__(
+            fmap_size=fmap_size,
+            refine="zoomout",
+            refine_kwargs=refine_kwargs,
+            **kwargs,
         )

@@ -76,6 +76,47 @@ class SpectralDescriptorCmpCase(TestCase):
         self.assertAllClose(descr_a, descr_b, atol=atol)
 
 
+class MatcherCmpCase(TestCase):
+    """Shape matcher comparison (geomfum implementation vs external one).
+
+    Both matchers map a shape to a copy of itself, which any correct functional
+    map matcher should recover as the (near-)identity correspondence. This gives
+    a deterministic, implementation-agnostic check that (a) each matcher is
+    correct and (b) the geomfum and external implementations agree.
+
+    Notes
+    -----
+    Needs: `matcher_a` (geomfum), `matcher_b` (external), and a `shapes`
+    collection built with ``return_duplicate=True`` (self-pairs).
+    """
+
+    # self-matching a shape must recover (near-)identity; a broken matcher gives
+    # essentially random indices (accuracy ~0), so this threshold is generous.
+    min_self_match_accuracy = 0.95
+    min_agreement = 0.95
+
+    @property
+    def shapes(self):
+        return self.testing_data.shapes
+
+    def _self_match_p2p(self, matcher, shape_key):
+        shape, other = self.shapes.get(shape_key)
+        p2p21 = gs.to_numpy(matcher(shape, other).p2p21)
+        return p2p21, np.arange(shape.n_vertices)
+
+    def test_self_match_identity(self, shape_key):
+        for matcher in (self.matcher_a, self.matcher_b):
+            p2p21, identity = self._self_match_p2p(matcher, shape_key)
+            accuracy = (p2p21 == identity).mean()
+            self.assertTrue(accuracy >= self.min_self_match_accuracy)
+
+    def test_matchers_agree(self, shape_key):
+        p2p_a, _ = self._self_match_p2p(self.matcher_a, shape_key)
+        p2p_b, _ = self._self_match_p2p(self.matcher_b, shape_key)
+        agreement = (p2p_a == p2p_b).mean()
+        self.assertTrue(agreement >= self.min_agreement)
+
+
 class WeightedFactorCmpCase(TestCase):
     """Factor computation comparison.
 

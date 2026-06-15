@@ -1,5 +1,11 @@
 """Functional map based matchers."""
 
+import geomfum.wrap as _wrap  # noqa (populates the matcher registry)
+from geomfum._registry import (
+    FunctionalMapMatcherRegistry,
+    WhichRegistryMixins,
+    ZoomOutMatcherRegistry,
+)
 from geomfum.convert import P2pFromFmConverter
 from geomfum.descriptor.pipeline import (
     ArangeSubsampler,
@@ -12,7 +18,7 @@ from geomfum.matcher.base import BaseMatcher, CorrespondenceResult
 from geomfum.refine import Refiner, ZoomOut
 
 
-class FunctionalMapMatcher(BaseMatcher):
+class FunctionalMapMatcher(WhichRegistryMixins, BaseMatcher):
     """Functional map based matcher with configurable pipeline.
 
     This matcher follows the standard functional map pipeline:
@@ -20,6 +26,12 @@ class FunctionalMapMatcher(BaseMatcher):
     2. Compute descriptors (WKS, landmarks if available)
     3. Optimize functional map with various constraints
     4. Convert to point-to-point correspondence
+
+    This is geomfum's internal implementation (``which="geomfum"``, the
+    default). Alternative library-backed implementations of the same matcher
+    type are available through the registry, e.g.
+    ``FunctionalMapMatcher.from_registry(which="pyfm", ...)`` for pyFM's
+    reference pipeline.
 
     Parameters
     ----------
@@ -32,6 +44,8 @@ class FunctionalMapMatcher(BaseMatcher):
     p2p_converter : P2pFromFmConverter, optional
         Converter from functional map to point-to-point. If None, uses default.
     """
+
+    _Registry = FunctionalMapMatcherRegistry
 
     def __init__(
         self,
@@ -114,12 +128,18 @@ class FunctionalMapMatcher(BaseMatcher):
             descr_b=descr_b,
         )
 
-class ZoomOutMatcher(BaseMatcher):
+class ZoomOutMatcher(WhichRegistryMixins, BaseMatcher):
     """ZoomOut functional map matcher.
 
     This matcher implements the ZoomOut algorithm for functional map optimization.
     It inherits from FunctionalMapMatcher and overrides the optimizer with a ZoomOut implementation.
+
+    This is geomfum's internal implementation (``which="geomfum"``, the
+    default). pyFM's ZoomOut-refined pipeline is available through the registry:
+    ``ZoomOutMatcher.from_registry(which="pyfm", ...)``.
     """
+
+    _Registry = ZoomOutMatcherRegistry
 
     def __init__(
         self,

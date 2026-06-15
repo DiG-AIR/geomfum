@@ -5,6 +5,7 @@ from geomfum._registry import (
     register_face_orientation_operator,
     register_face_valued_gradient,
     register_feature_extractor,
+    register_functional_map_matcher,
     register_heat_distance_metric,
     register_heat_kernel_signature,
     register_hierarchical_mesh,
@@ -15,6 +16,7 @@ from geomfum._registry import (
     register_poisson_sampler,
     register_precise_geodesic_distance_metric,
     register_wave_kernel_signature,
+    register_zoom_out_matcher,
 )
 from geomfum._utils import has_package
 
@@ -114,4 +116,12 @@ register_precise_geodesic_distance_metric(
     "Pp3dEdgeFlipGeodesicMetric",
     requires="potpourri3d",
     as_default=True,
+)
+
+register_functional_map_matcher(
+    "pyfm", "PyfmFunctionalMapMatcher", requires="pyFM", as_default=False
+)
+
+register_zoom_out_matcher(
+    "pyfm", "PyfmZoomOutMatcher", requires="pyFM", as_default=False
 )
