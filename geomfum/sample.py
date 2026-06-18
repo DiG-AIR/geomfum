@@ -70,23 +70,22 @@ class FarthestPointSampler(BaseSampler):
 
         if first_point is None:
             rng = np.random.default_rng()
-            inds = [rng.choice(sub_points)]
+            inds = [int(rng.choice(sub_points))]  # cast to int
         else:
+            first_point = int(first_point)  # cast to int
             if first_point not in sub_points:
                 warnings.warn(
-                    f"First index {first_point} is not in the points pool {sub_points}.",
+                    f"First index {first_point} is not in the points pool.",
                     UserWarning,
                 )
-            sub_points = np.append(sub_points, first_point)
+                sub_points = np.append(sub_points, first_point)
             inds = [first_point]
 
         dists = dist_func(inds[0])[0][sub_points]
 
-        for i in range(self.min_n_samples - 1):
-            if i == self.min_n_samples - 1:
-                continue
+        for _ in range(self.min_n_samples - 1):  # removed dead if-check
             new_subid = np.argmax(dists)
-            newid = sub_points[new_subid]
+            newid = int(sub_points[new_subid])  # cast to int
             inds.append(newid)
             dists = np.minimum(dists, dist_func(newid)[0][sub_points])
 
