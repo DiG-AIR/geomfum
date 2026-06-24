@@ -11,7 +11,11 @@ from geomfum._registry import (
     FaceValuedGradientRegistry,
     WhichRegistryMixins,
 )
-from geomfum.laplacian import LaplacianFinder, LaplacianSpectrumFinder
+from geomfum.laplacian import (
+    GraphLaplacianFinder,
+    LaplacianFinder,
+    LaplacianSpectrumFinder,
+)
 
 
 # TODO: remove functional; simply use operator
@@ -140,9 +144,12 @@ class Laplacian(FunctionalOperator):
             return self._stiffness_matrix, self._mass_matrix
 
         if laplacian_finder is None:
-            laplacian_finder = LaplacianFinder.from_registry(
-                shape_type=self._shape.shape_type, which="robust"
-            )
+            if self._shape.shape_type == "graph":
+                laplacian_finder = GraphLaplacianFinder()
+            else:
+                laplacian_finder = LaplacianFinder.from_registry(
+                    shape_type=self._shape.shape_type, which="robust"
+                )
 
         self._stiffness_matrix, self._mass_matrix = laplacian_finder(self._shape)
 

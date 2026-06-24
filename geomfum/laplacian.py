@@ -90,6 +90,44 @@ class LaplacianFinder(ShapeWhichRegistryMixins, BaseLaplacianFinder):
         return stiffness_matrix, mass_matrix
 
 
+class GraphLaplacianFinder(BaseLaplacianFinder):
+    """Algorithm to find the combinatorial graph Laplacian.
+
+    Computes L = D - W where W is the weighted adjacency matrix and
+    D is the diagonal degree matrix.
+    """
+
+    def __call__(self, shape):
+        """Apply algorithm.
+
+        Parameters
+        ----------
+        shape : Graph
+            Graph.
+
+        Returns
+        -------
+        stiffness_matrix : sparse.csc_matrix, shape=[n_vertices, n_vertices]
+            Graph Laplacian matrix L = D - W.
+        mass_matrix : sparse.dia_matrix, shape=[n_vertices, n_vertices]
+            Diagonal degree matrix.
+        """
+        import numpy as np
+        import scipy.sparse
+
+        adj_scipy = gs.sparse.to_scipy_csc(shape.adjacency_matrix)
+        degree = np.asarray(adj_scipy.sum(axis=1)).flatten()
+
+        laplacian_scipy = scipy.sparse.diags(degree, format="csc") - adj_scipy
+
+        stiffness_matrix = gs.sparse.from_scipy_csc(
+            scipy.sparse.csc_matrix(laplacian_scipy)
+        )
+        mass_matrix = gs.sparse.dia_matrix(gs.asarray(degree))
+
+        return stiffness_matrix, mass_matrix
+
+
 class LaplacianSpectrumFinder:
     """Algorithm to find Laplacian spectrum.
 

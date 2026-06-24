@@ -591,8 +591,8 @@ class FunctionalMap:
         """
         return [
             SDPFactorBuilder(weight=1.0),
-            LBCFactorBuilder(weight=1e-2),
-            MultFactorBuilder(weight=1e-1),
+            LBCFactorBuilder(weight=1e-1),
+            MultFactorBuilder(weight=1e-2),
         ]
 
     def __call__(self, basis_a, basis_b, descr_a, descr_b, x_0=None):
