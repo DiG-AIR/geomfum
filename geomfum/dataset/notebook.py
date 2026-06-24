@@ -28,6 +28,9 @@ class NotebooksDataset:
         faust_url = "https://raw.githubusercontent.com/JM-data/PyFuncMap/4bde4484c3e93bff925a6a82da29fa79d6862f4b/FAUST_shapes_off/"
 
         s4a_data_url = "https://raw.githubusercontent.com/gviga/S4A-Scalable-Spectral-Shape-Analysis/refs/heads/main/data/giorgio_/"
+
+        volumetric_data_url = "https://raw.githubusercontent.com/filthynobleman/vol-fmaps/refs/heads/main/sample-data/armadillo/"
+
         self.files = {
             "cat-00": DownloadableFile("cat-00.off", f"{pyfm_data_url}/cat-00.off"),
             "lion-00": DownloadableFile("lion-00.off", f"{pyfm_data_url}/lion-00.off"),
@@ -44,6 +47,12 @@ class NotebooksDataset:
             ),
             "template_ldmk": DownloadableFile(
                 "template_ldmk.txt", f"{s4a_data_url}/remeshed_landmarks.txt"
+            ),
+            "volumetric_armadillo_01": DownloadableFile(
+                "volumetric_armadillo_01.mesh", f"{volumetric_data_url}/source.mesh"
+            ),
+            "volumetric_armadillo_02": DownloadableFile(
+                "volumetric_armadillo_02.mesh", f"{volumetric_data_url}/target.mesh"
             ),
         }
 

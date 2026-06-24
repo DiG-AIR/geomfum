@@ -140,9 +140,16 @@ class Laplacian(FunctionalOperator):
             return self._stiffness_matrix, self._mass_matrix
 
         if laplacian_finder is None:
-            laplacian_finder = LaplacianFinder.from_registry(
-                shape_type=self._shape.shape_type, which="robust"
-            )
+            if self._shape.shape_type == "tetmesh":
+                from geomfum.laplacian import TetrahedralLaplacianFinder
+
+                laplacian_finder = TetrahedralLaplacianFinder()
+            elif self._shape.shape_type == "pointcloud":
+                laplacian_finder = LaplacianFinder.from_registry(
+                    shape_type=self._shape.shape_type, which="robust"
+                )
+            else:
+                laplacian_finder = LaplacianFinder()
 
         self._stiffness_matrix, self._mass_matrix = laplacian_finder(self._shape)
 
@@ -294,3 +301,66 @@ class FaceOrientationOperator(WhichRegistryMixins, VectorFieldOperator):
     """
 
     _Registry = FaceOrientationOperatorRegistry
+
+
+class TetrahedralGradient(FunctionalOperator):
+    """Gradient of a scalar function on a tetrahedral mesh.
+
+    Computes the piecewise-constant gradient per tetrahedron using
+    area-weighted face normals.  The resulting gradient is a 3D vector
+    per tetrahedron (as opposed to 2D tangent-plane vectors for surfaces).
+
+    Parameters
+    ----------
+    shape : TetrahedralMesh
+        The tetrahedral mesh.
+    gradient_matrix : sparse matrix, shape=[n_tets * 3, n_vertices], optional
+        Pre-computed gradient matrix.  If ``None``, it will be computed
+        lazily on first access.
+    """
+
+    def __init__(self, shape, gradient_matrix=None):
+        super().__init__(shape)
+        self._gradient_matrix = gradient_matrix
+
+    @property
+    def gradient_matrix(self):
+        """Sparse gradient operator matrix.
+
+        The matrix maps vertex scalar values to per-tetrahedron 3D gradient
+        vectors stored row-major (rows ``3*i``, ``3*i+1``, ``3*i+2`` are
+        the x, y, z components for tetrahedron *i*).
+
+        Returns
+        -------
+        grad_matrix : sparse matrix, shape=[n_tets * 3, n_vertices]
+        """
+        if self._gradient_matrix is None:
+            from geomfum.shape.shape_utils import (
+                compute_tetrahedral_gradient_matrix_vectorized,
+            )
+
+            self._gradient_matrix = compute_tetrahedral_gradient_matrix_vectorized(
+                self._shape.vertices,
+                self._shape.tets,
+                self._shape.tet_volumes,
+            )
+
+        return self._gradient_matrix
+
+    def __call__(self, function):
+        """Apply the gradient operator to a scalar function.
+
+        Parameters
+        ----------
+        function : array-like, shape=[..., n_vertices]
+            Scalar function defined on vertices.
+
+        Returns
+        -------
+        grad : array-like, shape=[..., n_tets, 3]
+            Gradient vector per tetrahedron.
+        """
+        flat_grad = la.matvecmul(self.gradient_matrix, function)
+        n_tets = self._shape.n_tets
+        return gs.reshape(flat_grad, (*function.shape[:-1], n_tets, 3))

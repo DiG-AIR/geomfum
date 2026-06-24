@@ -86,8 +86,116 @@ class LaplacianFinder(ShapeWhichRegistryMixins, BaseLaplacianFinder):
             coalesce=True,
         )
 
-        mass_matrix = gs.sparse.dia_matrix(shape.vertex_areas)
+        mass_matrix = gs.to_device(
+            gs.sparse.dia_matrix(gs.to_device(shape.vertex_areas, "cpu")),
+            getattr(shape.vertices, "device", None),
+        )
         return stiffness_matrix, mass_matrix
+
+
+class TetrahedralLaplacianFinder(BaseLaplacianFinder):
+    """Algorithm to find the Laplacian for tetrahedral meshes.
+
+    Uses dihedral angle cotangent weights to build the stiffness matrix
+    for volumetric tetrahedral meshes.
+    """
+
+    def __call__(self, shape):
+        """Apply algorithm.
+
+        Parameters
+        ----------
+        shape : TetrahedralMesh
+            Tetrahedral mesh.
+
+        Returns
+        -------
+        stiffness_matrix : sparse.csc_matrix, shape=[n_vertices, n_vertices]
+            Stiffness matrix.
+        mass_matrix : sparse.dia_matrix, shape=[n_vertices, n_vertices]
+            Diagonal lumped mass matrix.
+        """
+        vertices = shape.vertices
+        tets = shape.tets
+        n_verts = shape.n_vertices
+
+        device = getattr(vertices, "device", None)
+
+        SI = []
+        SJ = []
+        SV = []
+
+        for i in range(4):
+            j = (i + 1) % 4
+            k = (j + 1) % 4
+            ell = (k + 1) % 4
+
+            Eij = vertices[tets[:, j]] - vertices[tets[:, i]]
+            Eij = Eij / gs.linalg.norm(Eij, axis=1, keepdims=True)
+
+            Ekl = vertices[tets[:, ell]] - vertices[tets[:, k]]
+            Lkl = gs.linalg.norm(Ekl, axis=1)
+            Ekl = Ekl / gs.linalg.norm(Ekl, axis=1, keepdims=True)
+
+            Eki = vertices[tets[:, i]] - vertices[tets[:, k]]
+            Eki = Eki / gs.linalg.norm(Eki, axis=1, keepdims=True)
+            Nikl = gs.cross(Ekl, Eki)
+
+            Ekj = vertices[tets[:, j]] - vertices[tets[:, k]]
+            Ekj = Ekj / gs.linalg.norm(Ekj, axis=1, keepdims=True)
+            Njlk = -gs.cross(Ekj, Ekl)
+
+            dot_Nikl_Njlk = gs.einsum("ij,ij->i", Nikl, Njlk)
+            dot_Nikl_Njlk = gs.clip(dot_Nikl_Njlk, -1.0, 1.0)
+            V = gs.arccos(dot_Nikl_Njlk)
+            cotV = 1.0 / gs.tan(V)
+
+            values = gs.maximum(Lkl * cotV, 1e-10)
+
+            SI.append(tets[:, i])
+            SJ.append(tets[:, j])
+            SV.append(values)
+
+        SI = gs.concatenate(SI)
+        SJ = gs.concatenate(SJ)
+        SV = gs.concatenate(SV)
+
+        # Build symmetric sparse matrix
+        row = gs.concatenate([SI, SJ])
+        col = gs.concatenate([SJ, SI])
+        data = gs.concatenate([SV, SV]) / 6.0
+
+        # Build off-diagonal part to compute row sums
+        off_diag = gs.sparse.csc_matrix(
+            gs.stack([row, col]),
+            data,
+            shape=(n_verts, n_verts),
+            coalesce=True,
+        )
+
+        # Diagonal is negative sum of rows (to ensure zero row sum)
+        diag_data = gs.to_device(
+            gs.array(gs.sparse.to_scipy_csc(off_diag).sum(axis=1)).flatten(), device
+        )
+
+        # Build final matrix: off-diagonal - diag(row_sums)
+        all_row = gs.concatenate([row, gs.to_device(gs.arange(n_verts), device)])
+        all_col = gs.concatenate([col, gs.to_device(gs.arange(n_verts), device)])
+        all_data = gs.concatenate([data, -diag_data])
+
+        stiffness_matrix = gs.sparse.csc_matrix(
+            gs.stack([all_row, all_col]),
+            all_data,
+            shape=(n_verts, n_verts),
+            coalesce=True,
+        )
+
+        mass_matrix = gs.to_device(
+            gs.sparse.dia_matrix(gs.to_device(shape.vertex_areas, "cpu")),
+            getattr(shape.vertices, "device", None),
+        )
+
+        return -stiffness_matrix, mass_matrix
 
 
 class LaplacianSpectrumFinder:

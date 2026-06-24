@@ -293,10 +293,16 @@ class _PointSetLaplacianFinderRegistry(Registry):
     MAP = {}
 
 
+class _TetrahedralMeshLaplacianFinderRegistry(Registry):
+    has_internal = True
+    MAP = {}
+
+
 class LaplacianFinderRegistry(NestedRegistry):
     Registries = {
         "mesh": _MeshLaplacianFinderRegistry,
         "pointcloud": _PointSetLaplacianFinderRegistry,
+        "tetmesh": _TetrahedralMeshLaplacianFinderRegistry,
     }
 
 
@@ -364,10 +370,16 @@ class _PointSetHeatDistanceMetricRegistry(Registry):
     MAP = {}
 
 
+class _TetrahedralMeshHeatDistanceMetricRegistry(Registry):
+    has_internal = False
+    MAP = {}
+
+
 class HeatDistanceMetricRegistry(NestedRegistry):
     Registries = {
         "mesh": _MeshHeatDistanceMetricRegistry,
         "pointcloud": _PointSetHeatDistanceMetricRegistry,
+        "tetmesh": _TetrahedralMeshHeatDistanceMetricRegistry,
     }
 
 class PreciseGeodesicDistanceMetricRegistry(Registry):

@@ -157,3 +157,199 @@ def compute_gradient_matrix_fem(vertices, edges, edge_tangent_vectors):
     )
 
     return gradient_matrix
+
+
+def compute_tetrahedral_gradient_matrix(vertices, tets, tet_volumes):
+    """Construct piecewise-constant gradient operator for a tetrahedral mesh.
+
+    For each tetrahedron the gradient of a scalar function is constant and
+    lives in R^3.  The resulting sparse matrix maps vertex scalar values to
+    per-tet gradient vectors stored row-major (rows ``3*i``, ``3*i+1``,
+    ``3*i+2`` are the x, y, z components for tetrahedron *i*).
+
+    This is a direct loop-based translation of the cinolib ``gradient_matrix``
+    function that uses area-weighted face normals.
+
+    Parameters
+    ----------
+    vertices : array-like, shape=[n_vertices, 3]
+        Vertex coordinates.
+    tets : array-like, shape=[n_tets, 4]
+        Tetrahedra (each row has 4 vertex indices).
+    tet_volumes : array-like, shape=[n_tets]
+        Volume of each tetrahedron.
+
+    Returns
+    -------
+    grad_matrix : sparse matrix, shape=[n_tets * 3, n_vertices]
+        Gradient operator.
+    """
+    n_vertices = vertices.shape[0]
+    n_tets = tets.shape[0]
+
+    # Face opposite to local vertex i is formed by the other 3 vertices.
+    # Winding chosen so that the outward normal is consistent.
+    face_local_indices = [
+        [1, 2, 3],  # face opposite vertex 0
+        [0, 3, 2],  # face opposite vertex 1
+        [0, 1, 3],  # face opposite vertex 2
+        [0, 2, 1],  # face opposite vertex 3
+    ]
+
+    row_inds = []
+    col_inds = []
+    data_vals = []
+
+    for pid in range(n_tets):
+        vol = max(tet_volumes[pid], 1e-5)
+        tet_vids = tets[pid]
+
+        # Pre-compute face normals, areas and vertex sets
+        face_normals = []
+        face_areas = []
+        face_vertex_sets = []
+        for fi in range(4):
+            li = face_local_indices[fi]
+            v0 = vertices[tet_vids[li[0]]]
+            v1 = vertices[tet_vids[li[1]]]
+            v2 = vertices[tet_vids[li[2]]]
+
+            cross = gs.cross(v1 - v0, v2 - v0)
+            area = gs.linalg.norm(cross) / 2.0
+            normal = cross / (2.0 * area + 1e-15)
+
+            face_normals.append(normal)
+            face_areas.append(area)
+            face_vertex_sets.append(
+                {int(tet_vids[li[0]]), int(tet_vids[li[1]]), int(tet_vids[li[2]])}
+            )
+
+        for local_vi in range(4):
+            vid = int(tet_vids[local_vi])
+            contrib = gs.zeros(3)
+
+            for fi in range(4):
+                if vid in face_vertex_sets[fi]:
+                    contrib = contrib + (face_normals[fi] * face_areas[fi]) / 3.0
+
+            contrib = contrib / vol
+
+            base_row = 3 * pid
+            for dim in range(3):
+                row_inds.append(base_row + dim)
+                col_inds.append(vid)
+                data_vals.append(contrib[dim])
+
+    row_inds = gs.asarray(row_inds)
+    col_inds = gs.asarray(col_inds)
+    data_vals = gs.asarray(data_vals)
+
+    gradient_matrix = gs.sparse.to_csc(
+        gs.sparse.coo_matrix(
+            gs.stack([row_inds, col_inds]),
+            data_vals,
+            shape=(n_tets * 3, n_vertices),
+        )
+    )
+
+    return gradient_matrix
+
+
+def compute_tetrahedral_gradient_matrix_vectorized(vertices, tets, tet_volumes):
+    """Vectorized piecewise-constant gradient operator for a tetrahedral mesh.
+
+    Equivalent to :func:`compute_tetrahedral_gradient_matrix` but avoids
+    Python-level loops over tetrahedra, making it significantly faster for
+    large meshes.
+
+    Parameters
+    ----------
+    vertices : array-like, shape=[n_vertices, 3]
+        Vertex coordinates.
+    tets : array-like, shape=[n_tets, 4]
+        Tetrahedra (each row has 4 vertex indices).
+    tet_volumes : array-like, shape=[n_tets]
+        Volume of each tetrahedron.
+
+    Returns
+    -------
+    grad_matrix : sparse matrix, shape=[n_tets * 3, n_vertices]
+        Gradient operator.
+    """
+    n_vertices = vertices.shape[0]
+    n_tets = tets.shape[0]
+    device = getattr(vertices, "device", None)
+
+    # Face opposite to local vertex i — same winding as the loop version
+    face_local = gs.to_device(
+        gs.array(
+            [
+                [1, 2, 3],
+                [0, 3, 2],
+                [0, 1, 3],
+                [0, 2, 1],
+            ]
+        ),
+        device=device,
+    )
+
+    # Compute face normals and areas for all 4 faces, all tets at once
+    # face_normals: [4, n_tets, 3],  face_areas: [4, n_tets]
+    face_normals_list = []
+    face_areas_list = []
+
+    for fi in range(4):
+        li = face_local[fi]
+        v0 = vertices[tets[:, li[0]]]  # [n_tets, 3]
+        v1 = vertices[tets[:, li[1]]]
+        v2 = vertices[tets[:, li[2]]]
+
+        cross = gs.cross(v1 - v0, v2 - v0)  # [n_tets, 3]
+        area = gs.linalg.norm(cross, axis=1) / 2.0  # [n_tets]
+        normal = cross / (2.0 * gs.expand_dims(area, axis=-1) + 1e-15)
+
+        face_normals_list.append(normal)
+        face_areas_list.append(area)
+
+    # Clamp volumes for numerical safety
+    safe_vol = gs.maximum(tet_volumes, 1e-5)  # [n_tets]
+
+    # For each local vertex (0–3), accumulate contributions from adjacent
+    # faces (all faces except the one opposite to that vertex).
+    row_inds = []
+    col_inds = []
+    data_vals = []
+
+    tet_indices = gs.to_device(gs.arange(n_tets), device=device)
+
+    for local_vi in range(4):
+        # Faces adjacent to local vertex local_vi are all except face local_vi
+        contrib = gs.to_device(gs.zeros((n_tets, 3)), device=device)
+        for fi in range(4):
+            if fi == local_vi:
+                continue
+            area_fi = gs.expand_dims(face_areas_list[fi], axis=-1)  # [n_tets, 1]
+            contrib = contrib + face_normals_list[fi] * area_fi / 3.0
+
+        contrib = contrib / gs.expand_dims(safe_vol, axis=-1)  # [n_tets, 3]
+
+        global_vids = tets[:, local_vi]  # [n_tets]
+
+        for dim in range(3):
+            row_inds.append(3 * tet_indices + dim)
+            col_inds.append(global_vids)
+            data_vals.append(contrib[:, dim])
+
+    row_inds = gs.concatenate(row_inds)
+    col_inds = gs.concatenate(col_inds)
+    data_vals = gs.concatenate(data_vals)
+
+    gradient_matrix = gs.sparse.to_csc(
+        gs.sparse.coo_matrix(
+            gs.stack([row_inds, col_inds]),
+            data_vals,
+            shape=(n_tets * 3, n_vertices),
+        )
+    )
+
+    return gradient_matrix
