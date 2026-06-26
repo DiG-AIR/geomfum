@@ -1,0 +1,264 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# How to refine a functional map?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import geomstats.backend as gs\n",
+    "\n",
+    "from geomfum.dataset import NotebooksDataset\n",
+    "from geomfum.refine import (\n",
+    "    FastSinkhornFilters,\n",
+    "    IcpRefiner,\n",
+    "    ZoomOut,\n",
+    ")\n",
+    "from geomfum.shape import TriangleMesh"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "[Load meshes](00_load_mesh_from_file.ipynb)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "INFO: Data has already been downloaded... using cached file ('C:\\Users\\giuli\\.geomfum\\data\\cat-00.off').\n",
+      "INFO: Data has already been downloaded... using cached file ('C:\\Users\\giuli\\.geomfum\\data\\lion-00.off').\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "(7207, 5000)"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dataset = NotebooksDataset()\n",
+    "\n",
+    "mesh_a = TriangleMesh.from_file(dataset.get_filename(\"cat-00\"))\n",
+    "mesh_b = TriangleMesh.from_file(dataset.get_filename(\"lion-00\"))\n",
+    "\n",
+    "mesh_a.n_vertices, mesh_b.n_vertices"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "[Set Laplace eigenbasis](./02_mesh_laplacian_spectrum.ipynb) for each mesh."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\giuli\\OneDrive\\Research\\geomfum_proj\\geomfum\\geomfum\\_backend\\pytorch\\sparse.py:22: UserWarning: Sparse CSC tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\aten\\src\\ATen\\SparseCsrTensorImpl.cpp:55.)\n",
+      "  return _torch.sparse_csc_tensor(ccol_indices, row_indices, values, size=array.shape)\n"
+     ]
+    }
+   ],
+   "source": [
+    "mesh_a.laplacian.find_spectrum(spectrum_size=10, set_as_basis=True)\n",
+    "mesh_b.laplacian.find_spectrum(spectrum_size=10, set_as_basis=True)\n",
+    "\n",
+    "mesh_a.basis.use_k = 6\n",
+    "mesh_b.basis.use_k = 5"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Assume we have a [valid functional map](./07_functional_map.ipynb) $C$ between `mesh_a` and `mesh_b` (which for demonstration purposes, we instantiate randomly)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "torch.Size([5, 6])"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "fmap_matrix = gs.random.uniform(\n",
+    "    size=(mesh_b.basis.spectrum_size, mesh_a.basis.spectrum_size)\n",
+    ")\n",
+    "\n",
+    "fmap_matrix.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Refine functional map using ICP algorithm (see [OCSBG2012](https://dl.acm.org/doi/10.1145/2185520.2185526))."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "torch.Size([5, 6])"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "icp = IcpRefiner(nit=10, atol=1e-4)\n",
+    "\n",
+    "icp_fmap_matrix = icp(fmap_matrix, mesh_a.basis, mesh_b.basis)\n",
+    "\n",
+    "icp_fmap_matrix.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Refine functional map using ZoomOut (see [MRRSWO2019](https://arxiv.org/abs/1904.07865))."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "torch.Size([7, 10])"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "zoomout = ZoomOut(nit=2, step=(2, 1))\n",
+    "\n",
+    "zoomout_fmap_matrix_ = zoomout(fmap_matrix, mesh_a.basis, mesh_b.basis)\n",
+    "\n",
+    "zoomout_fmap_matrix_.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Refine functional map using fast Sinkhorn filters (see [PRMWO2021](https://openaccess.thecvf.com/content/CVPR2021/html/Pai_Fast_Sinkhorn_Filters_Using_Matrix_Scaling_for_Non-Rigid_Shape_Correspondence_CVPR_2021_paper.html))."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "torch.Size([7, 10])"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "fast_sinkhorn_filters = FastSinkhornFilters(nit=2, step=(2, 1))\n",
+    "\n",
+    "fast_sinkhorn_filters_fmap_matrix_ = fast_sinkhorn_filters(\n",
+    "    fmap_matrix, mesh_a.basis, mesh_b.basis\n",
+    ")\n",
+    "\n",
+    "fast_sinkhorn_filters_fmap_matrix_.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "[Pointwise](./10_pointwise_from_functional.ipynb) and [functional](./09_functional_from_pointwise.ipynb) converters can be easily controlled through `p2p_from_fm_converter` and `fm_from_p2p_converter` (sensible defaults are used.)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Further reading\n",
+    "\n",
+    "* [How to compute a functional map?](./functional_map.ipynb)\n",
+    "\n",
+    "* [How to compute a pointwise map from a functional map?](./pointwise_from_functional.ipynb)\n",
+    "\n",
+    "* [How to compute a functional map from a pointwise map?](./functional_from_pointwise.ipynb)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "VENV",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.8"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}

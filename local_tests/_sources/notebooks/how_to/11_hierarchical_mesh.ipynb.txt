@@ -1,0 +1,195 @@
+{
+    "cells": [
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "# How to create a hierarchical mesh and what can be done with it?"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": null,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "import geomstats.backend as gs\n",
+                "\n",
+                "from geomfum.dataset import NotebooksDataset\n",
+                "from geomfum.shape import TriangleMesh\n",
+                "from geomfum.shape.hierarchical import HierarchicalMesh"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "[Load mesh](00_load_mesh_from_file.ipynb)."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 2,
+            "metadata": {},
+            "outputs": [
+                {
+                    "name": "stderr",
+                    "output_type": "stream",
+                    "text": [
+                        "INFO: Data has already been downloaded... using cached file ('C:\\Users\\giuli\\.geomfum\\data\\cat-00.off').\n"
+                    ]
+                },
+                {
+                    "data": {
+                        "text/plain": [
+                            "(7207, 14410)"
+                        ]
+                    },
+                    "execution_count": 2,
+                    "metadata": {},
+                    "output_type": "execute_result"
+                }
+            ],
+            "source": [
+                "dataset = NotebooksDataset()\n",
+                "\n",
+                "mesh = TriangleMesh.from_file(dataset.get_filename(\"cat-00\"))\n",
+                "\n",
+                "mesh.n_vertices, mesh.n_faces"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "Create a hierarchical mesh."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 4,
+            "metadata": {},
+            "outputs": [
+                {
+                    "name": "stderr",
+                    "output_type": "stream",
+                    "text": [
+                        "C:\\Users\\giuli\\OneDrive\\Research\\geomfum_proj\\geomfum\\geomfum\\wrap\\pyrmt.py:69: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\torch\\csrc\\utils\\tensor_numpy.cpp:209.)\n",
+                        "  return TriangleMesh(gs.asarray(rlow.vertices), gs.asarray(rlow.triangles))\n"
+                    ]
+                }
+            ],
+            "source": [
+                "hmesh = HierarchicalMesh.from_registry(mesh, min_n_samples=1000)"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "This structure contains two objects, a low-resolution mesh (`hmesh.low`) and a high-resolution object (`hmesh.high`, which is `mesh`).\n",
+                "\n",
+                "Scalars from the low-resolution mesh can be transferred to the high-resolution mesh via `scalar_low_high`."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": null,
+            "metadata": {},
+            "outputs": [
+                {
+                    "data": {
+                        "text/plain": [
+                            "(torch.Size([1004]), (7207,))"
+                        ]
+                    },
+                    "execution_count": 9,
+                    "metadata": {},
+                    "output_type": "execute_result"
+                }
+            ],
+            "source": [
+                "low_scalar = gs.random.uniform(size=hmesh.low.n_vertices)\n",
+                "\n",
+                "high_scalar = hmesh.scalar_low_high(low_scalar)\n",
+                "\n",
+                "low_scalar.shape, high_scalar.shape"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "In particular, this can be used to extend a [low-resolution basis](./mesh_laplacian_spectrum.ipynb) (see section 3.3. of [ReMatching](https://arxiv.org/abs/2305.09274]))."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 10,
+            "metadata": {},
+            "outputs": [
+                {
+                    "name": "stderr",
+                    "output_type": "stream",
+                    "text": [
+                        "C:\\Users\\giuli\\OneDrive\\Research\\geomfum_proj\\geomfum\\geomfum\\_backend\\pytorch\\sparse.py:22: UserWarning: Sparse CSC tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\aten\\src\\ATen\\SparseCsrTensorImpl.cpp:55.)\n",
+                        "  return _torch.sparse_csc_tensor(ccol_indices, row_indices, values, size=array.shape)\n"
+                    ]
+                },
+                {
+                    "data": {
+                        "text/plain": [
+                            "(<geomfum.basis.LaplaceEigenBasis at 0x1fc468b9350>,\n",
+                            " <geomfum.basis.EigenBasis at 0x1fc4679eb90>)"
+                        ]
+                    },
+                    "execution_count": 10,
+                    "metadata": {},
+                    "output_type": "execute_result"
+                }
+            ],
+            "source": [
+                "hmesh.low.laplacian.find_spectrum(spectrum_size=10, set_as_basis=True)\n",
+                "\n",
+                "hmesh.extend_basis(set_as_basis=True)\n",
+                "\n",
+                "hmesh.low.basis, hmesh.high.basis"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Further reading\n",
+                "\n",
+                "* [How to use ReMatching to compute a functional map?](./13_rematching.ipynb)\n",
+                "\n",
+                "* [How to create a nested hierarchical mesh?](./12_nested_hierarchical_mesh.ipynb)"
+            ]
+        }
+    ],
+    "metadata": {
+        "kernelspec": {
+            "display_name": "VENV",
+            "language": "python",
+            "name": "python3"
+        },
+        "language_info": {
+            "codemirror_mode": {
+                "name": "ipython",
+                "version": 3
+            },
+            "file_extension": ".py",
+            "mimetype": "text/x-python",
+            "name": "python",
+            "nbconvert_exporter": "python",
+            "pygments_lexer": "ipython3",
+            "version": "3.11.8"
+        },
+        "requires": [
+            "rematching"
+        ]
+    },
+    "nbformat": 4,
+    "nbformat_minor": 2
+}

@@ -35,6 +35,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+<<<<<<< HEAD
+network = ["networkx"]
+wrap = [
+    "pyfmaps",
+    "robust-laplacian",
+    "libigl",
+    "geopext @ git+https://github.com/luisfpereira/geopext.git@2b7a7be1a8fdc6e5755e5f4bda88bc284065e829",
+]
+all = ["geomfum[network,wrap]"]
+test = ["pytest", "geomfum[all]"]
+=======
 lapl = ["robust-laplacian", "libigl"]
 metric = ["networkx", "potpourri3d"]
 sampling = ["pymeshlab"]
@@ -54,6 +65,7 @@ plotly = ["plotly", "nbformat"]
 pyvista = ["pyvista", "trame"]
 polyscope = ["polyscope"]
 plotting-all = ["geomfum[plotly,pyvista,polyscope]"]
+>>>>>>> main
 
 [project.urls]
 repository = "http://github.com/3diglab/geomfum"

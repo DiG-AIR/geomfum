@@ -1,0 +1,167 @@
+{
+    "cells": [
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "# How to efficiently compute a functional map with a forward pass?"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 3,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "import geomstats.backend as gs\n",
+                "\n",
+                "from geomfum.dataset import NotebooksDataset\n",
+                "from geomfum.descriptor.pipeline import (\n",
+                "    ArangeSubsampler,\n",
+                "    DescriptorPipeline,\n",
+                "    L2InnerNormalizer,\n",
+                ")\n",
+                "from geomfum.descriptor.spectral import HeatKernelSignature\n",
+                "from geomfum.forward_functional_map import ForwardFunctionalMap\n",
+                "from geomfum.shape import TriangleMesh\n"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "[Load meshes](00_load_mesh_from_file.ipynb)."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": null,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "dataset = NotebooksDataset()\n",
+                "\n",
+                "mesh_a = TriangleMesh.from_file(dataset.get_filename(\"cat-00\"))\n",
+                "mesh_b = TriangleMesh.from_file(dataset.get_filename(\"lion-00\"))"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "[Set Laplace eigenbasis](./02_mesh_laplacian_spectrum.ipynb) for each mesh."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 5,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "mesh_a.laplacian.find_spectrum(spectrum_size=100, set_as_basis=True)\n",
+                "mesh_b.laplacian.find_spectrum(spectrum_size=100, set_as_basis=True)\n",
+                "\n",
+                "# I decide to visualize just the first 10 eigenfunctions\n",
+                "\n",
+                "mesh_a.basis.use_k = 10 \n",
+                "mesh_b.basis.use_k = 10\n"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "Set a [descriptor pipeline](./04_descriptor_pipeline.ipynb) and apply it to both shapes."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 6,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "mesh_a.landmark_indices = gs.array([2840, 1594, 5596, 6809, 3924, 7169])\n",
+                "mesh_b.landmark_indices = gs.array([1334, 834, 4136, 4582, 3666, 4955])\n",
+                "steps = [\n",
+                "    HeatKernelSignature.from_registry(n_domain=100, use_landmarks=True),\n",
+                "    ArangeSubsampler(subsample_step=1),\n",
+                "    L2InnerNormalizer(),\n",
+                "]\n",
+                "\n",
+                "pipeline = DescriptorPipeline(steps)\n",
+                "\n",
+                "descr_a = pipeline.apply(mesh_a)\n",
+                "descr_b = pipeline.apply(mesh_b)"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "Solve for the functional map matrix performing the forward pass."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": 7,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "ffm = ForwardFunctionalMap(lmbda=1e3, resolvent_gamma=1)\n",
+                "fmap, fmap21 = ffm(mesh_a, mesh_b, descr_a, descr_b)"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "Visualize the map"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": null,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "import matplotlib.pyplot as plt\n",
+                "\n",
+                "plt.imshow(fmap, \"bwr\")\n"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Further reading\n",
+                "\n",
+                "* [How to compute a pointwise map from a functional map?](./10_pointwise_from_functional.ipynb)\n",
+                "\n",
+                "* [How to refine a functional map?](./15_refine_functional_map.ipynb)\n",
+                "\n",
+                "* [How to use ReMatching to compute a functional map?](./13_rematching.ipynb)"
+            ]
+        }
+    ],
+    "metadata": {
+        "kernelspec": {
+            "display_name": "venv",
+            "language": "python",
+            "name": "python3"
+        },
+        "language_info": {
+            "codemirror_mode": {
+                "name": "ipython",
+                "version": 3
+            },
+            "file_extension": ".py",
+            "mimetype": "text/x-python",
+            "name": "python",
+            "nbconvert_exporter": "python",
+            "pygments_lexer": "ipython3",
+            "version": "3.12.3"
+        }
+    },
+    "nbformat": 4,
+    "nbformat_minor": 2
+}
