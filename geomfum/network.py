@@ -12,7 +12,7 @@ import scipy.sparse.linalg
 from scipy.optimize import linprog
 from tqdm import tqdm
 
-from geomfum.convert import NeighborFinder
+from geomfum.convert import FmFromP2pConverter, NeighborFinder
 from geomfum.numerics.eig import ScipyEigsh
 from geomfum.shape.hierarchical import HierarchicalMesh
 
@@ -124,8 +124,59 @@ def _clb_quad_form(conn, weights, edges, n_shapes, M):
     return scipy.sparse.bmat(grid, format="csr")
 
 
-class FunctionalMapNetwork:
-    """Functional map network.
+class ShapeCollection:
+    """An ordered collection of shapes with no graph structure.
+
+    Parameters
+    ----------
+    shapes : list[Shape]
+        Shapes in the collection.
+    """
+
+    def __init__(self, shapes):
+        self.shapes = tuple(shapes)
+
+    @property
+    def n_shapes(self):
+        """Number of shapes in the collection.
+
+        Returns
+        -------
+        n_shapes : int
+        """
+        return len(self.shapes)
+
+    def low_resolution(self, min_n_samples=2000):
+        """Wrap each shape in a HierarchicalMesh and update the collection.
+
+        Parameters
+        ----------
+        min_n_samples : int
+            Target vertex count for the low-resolution remeshing.
+        """
+        self.shapes = [
+            HierarchicalMesh.from_registry(mesh, min_n_samples=min_n_samples)
+            for mesh in tqdm(self.shapes)
+        ]
+
+    def compute_spectrum(self, spectrum_size, set_as_basis=True):
+        """Compute the Laplacian spectrum for every shape in the collection.
+
+        Parameters
+        ----------
+        spectrum_size : int
+            Number of eigenpairs to compute.
+        set_as_basis : bool
+            Whether to store the result as the shape's basis.
+        """
+        for mesh in tqdm(self.shapes):
+            _leaf(mesh).laplacian.find_spectrum(
+                spectrum_size=spectrum_size, set_as_basis=set_as_basis
+            )
+
+
+class Graph(ShapeCollection):
+    """A collection of shapes with an unweighted directed graph topology.
 
     Parameters
     ----------
@@ -134,8 +185,324 @@ class FunctionalMapNetwork:
     """
 
     def __init__(self, shapes):
-        # TODO: add iso as flag
-        self.shapes = tuple(shapes)
+        super().__init__(shapes)
+        self._edges = {}
+
+    @property
+    def edges(self):
+        """Get all edges.
+
+        Returns
+        -------
+        edges : list[tuple[int; 2]]
+        """
+        return list(self._edges.keys())
+
+    @property
+    def n_edges(self):
+        """Return number of edges in the graph.
+
+        Returns
+        -------
+        n_edges : int
+        """
+        return len(self._edges)
+
+    def add_edge(self, i, j):
+        """Add a directed edge between shapes i and j.
+
+        Parameters
+        ----------
+        i : int
+            Source shape index.
+        j : int
+            Target shape index.
+
+        Returns
+        -------
+        self : Graph
+        """
+        self._edges[(i, j)] = None
+        return self
+
+    def add_fully_connected_random_edges(self, N, seed=None):
+        """Add N edges ensuring full connectivity first.
+
+        Parameters
+        ----------
+        N : int
+            Total number of edges to create.
+        seed : int or None
+            Random seed for reproducibility.
+        """
+        if seed is not None:
+            random.seed(seed)
+
+        num_shapes = len(self.shapes)
+        if N < num_shapes - 1:
+            raise ValueError("Not enough edges to ensure full connectivity.")
+
+        tree = nx.random_tree(num_shapes, seed=seed)
+        for i, j in tree.edges():
+            self.add_edge(i, j)
+
+        existing_edges = set(self._edges.keys())
+        all_possible_edges = set(
+            (i, j) for i in range(num_shapes) for j in range(num_shapes) if i != j
+        )
+        available_edges = list(all_possible_edges - existing_edges)
+
+        additional_edges_needed = N - len(existing_edges)
+        if additional_edges_needed > 0:
+            new_edges = random.sample(available_edges, additional_edges_needed)
+            for i, j in new_edges:
+                self.add_edge(i, j)
+
+        return self
+
+    def to_networkx(self):
+        """Get networkx representation.
+
+        Returns
+        -------
+        graph : nx.DiGraph
+        """
+        return nx.DiGraph(self.edges)
+
+    def simple_cycles(self):
+        """Find simple cycles (elementary circuits) of the graph.
+
+        Returns
+        -------
+        cycles : list[list[int]]
+        """
+        return list(nx.simple_cycles(self.to_networkx()))
+
+    def edges_starting_at_index(self, i):
+        """Get all edges starting at shape i.
+
+        Returns
+        -------
+        edges : list[tuple[int; 2]]
+        """
+        return [edge for edge in self.edges if edge[0] == i]
+
+    def edges_ending_at_index(self, i):
+        """Get all edges ending at shape i.
+
+        Returns
+        -------
+        edges : list[tuple[int; 2]]
+        """
+        return [edge for edge in self.edges if edge[1] == i]
+
+
+class VarifoldNetwork(Graph):
+    """Weighted graph whose edge data are varifold distances between shapes.
+
+    Varifold distances are computed as a kernel metric on the space of surface
+    measures, using a Gaussian kernel on face centroids and a Binet (squared
+    dot-product) kernel on unit face normals.  Both rely exclusively on
+    ``mesh.face_normals``, ``mesh.face_areas``, and ``mesh.face_vertex_coords``
+    as exposed by geomfum's ``TriangleMesh``.
+
+    The resulting per-edge distances are then turned into a ``scipy.sparse``
+    weight matrix (via a Gaussian exponentiation, as in
+    ``FunctionalMapNetwork.set_weights``) that can drive any downstream
+    graph-based analysis that only needs topology + weights.
+
+    Parameters
+    ----------
+    shapes : list[Shape]
+        Vertices of the graph.
+    """
+
+    def __init__(self, shapes):
+        super().__init__(shapes)
+        self.distances = {}
+        self.weights = None
+
+    @property
+    def edges(self):
+        """Get all edges.
+
+        Returns
+        -------
+        edges : list[tuple[int; 2]]
+        """
+        return list(self.distances.keys())
+
+    @property
+    def n_edges(self):
+        """Return number of edges in the graph.
+
+        Returns
+        -------
+        n_edges : int
+        """
+        return len(self.distances)
+
+    def add_edge(self, i, j, distance=None):
+        """Add a directed edge and optionally store a precomputed varifold distance.
+
+        Parameters
+        ----------
+        i : int
+            Source shape index.
+        j : int
+            Target shape index.
+        distance : float or None
+            Varifold distance between shapes i and j. May be computed later
+            via ``compute_varifold_distance``.
+
+        Returns
+        -------
+        self : VarifoldNetwork
+        """
+        super().add_edge(i, j)
+        self.distances[(i, j)] = distance
+        return self
+
+    def compute_varifold_distance(self, i, j, sigma=1.0):
+        """Compute the varifold distance between shapes i and j.
+
+        Uses a Gaussian kernel on face centroids and a Binet kernel on unit
+        face normals.  All geometric quantities are read from geomfum's
+        ``TriangleMesh`` attributes (``face_normals``, ``face_areas``,
+        ``face_vertex_coords``).
+
+        The formula is::
+
+            d_V(S_i, S_j)^2 = K(S_i, S_i) + K(S_j, S_j) - 2 * K(S_i, S_j)
+
+            K(S_a, S_b) = sum_{f in S_a} sum_{g in S_b}
+                              a_f * a_g
+                              * exp(-||c_f - c_g||^2 / (2 * sigma^2))
+                              * (n_f . n_g)^2
+
+        Parameters
+        ----------
+        i : int
+            Index of the first shape.
+        j : int
+            Index of the second shape.
+        sigma : float
+            Bandwidth of the Gaussian position kernel.
+
+        Returns
+        -------
+        distance : float
+            Non-negative varifold distance.
+        """
+        mesh_i = _leaf(self.shapes[i])
+        mesh_j = _leaf(self.shapes[j])
+
+        # Face centroids: mean of the three vertex coordinates per face.
+        # face_vertex_coords has shape [n_faces, 3, 3] (3 vertices, 3 coords).
+        c_i = np.asarray(mesh_i.face_vertex_coords).mean(axis=1)
+        c_j = np.asarray(mesh_j.face_vertex_coords).mean(axis=1)
+
+        n_i = np.asarray(mesh_i.face_normals)
+        n_j = np.asarray(mesh_j.face_normals)
+
+        a_i = np.asarray(mesh_i.face_areas)
+        a_j = np.asarray(mesh_j.face_areas)
+
+        def _kernel(c_a, n_a, a_a, c_b, n_b, a_b):
+            # Gaussian on centroids: [n_a, n_b]
+            diff = c_a[:, None, :] - c_b[None, :, :]
+            pos_k = np.exp(-np.sum(diff ** 2, axis=-1) / (2.0 * sigma ** 2))
+            # Binet kernel on normals: (n_a . n_b)^2
+            nor_k = (n_a @ n_b.T) ** 2
+            # Weighted sum
+            return float((a_a[:, None] * a_b[None, :] * pos_k * nor_k).sum())
+
+        k_ii = _kernel(c_i, n_i, a_i, c_i, n_i, a_i)
+        k_jj = _kernel(c_j, n_j, a_j, c_j, n_j, a_j)
+        k_ij = _kernel(c_i, n_i, a_i, c_j, n_j, a_j)
+
+        return float(np.sqrt(max(k_ii + k_jj - 2.0 * k_ij, 0.0)))
+
+    def compute_all_distances(self, sigma=1.0, verbose=False):
+        """Compute and store the varifold distance for every edge.
+
+        Parameters
+        ----------
+        sigma : float
+            Bandwidth of the Gaussian position kernel.
+        verbose : bool
+            Whether to print progress.
+
+        Returns
+        -------
+        self : VarifoldNetwork
+        """
+        edges = self.edges
+        iterator = tqdm(edges) if verbose else edges
+        for i, j in iterator:
+            self.distances[(i, j)] = self.compute_varifold_distance(i, j, sigma=sigma)
+        return self
+
+    def set_weights(self, sigma_w=1.0):
+        """Build the edge weight matrix from the stored varifold distances.
+
+        Applies the same Gaussian exponentiation used by
+        ``FunctionalMapNetwork.set_weights`` so that small distances yield
+        large weights::
+
+            w_{ij} = exp(-d_{ij}^2 / (2 * sigma_w^2))
+
+        Parameters
+        ----------
+        sigma_w : float
+            Bandwidth for converting distances to weights.
+
+        Returns
+        -------
+        self : VarifoldNetwork
+        """
+        if any(d is None for d in self.distances.values()):
+            raise ValueError(
+                "All edges must have a distance set. "
+                "Call compute_all_distances() first."
+            )
+
+        edges = self.edges
+        rows = [e[0] for e in edges]
+        cols = [e[1] for e in edges]
+        dist_arr = np.array([self.distances[e] for e in edges])
+        values = np.exp(-(dist_arr ** 2) / (2.0 * sigma_w ** 2))
+
+        self.weights = scipy.sparse.csr_matrix(
+            (values, (rows, cols)), shape=(self.n_shapes, self.n_shapes)
+        )
+        return self
+
+    # TODO: extend with the following improvements once geomfum adds support:
+    #   - Vectorised / GPU kernel evaluation via gsops.backend (replace the
+    #     pure-numpy _kernel inner function with gs operations so the backend
+    #     can dispatch to PyTorch/CUDA when available).
+    #   - Oriented-varifold vs unoriented option (replace Binet kernel
+    #     (n_a . n_b)^2 with the Cauchy-Binet kernel or the oriented kernel
+    #     |n_a . n_b| to handle non-orientable or poorly-oriented meshes).
+    #   - Kernel registry analogous to geomfum's WhichRegistryMixins so that
+    #     users can swap position and normal kernels (Gaussian, Cauchy, …)
+    #     without subclassing.
+    #   - Integration with geomfum's metric module (geomfum.metric) to allow
+    #     geodesic-distance-based position kernels instead of the Euclidean one.
+
+
+class FunctionalMapNetwork(Graph):
+    """Weighted graph whose edge data are functional maps, supporting Consistent ZoomOut.
+
+    Parameters
+    ----------
+    shapes : list[Shape]
+        Vertices of the graph.
+    """
+
+    def __init__(self, shapes):
+        super().__init__(shapes)
         self.conn = {}
 
         self._M = None
@@ -158,16 +525,6 @@ class FunctionalMapNetwork:
         self.p2p = None
 
     @property
-    def n_shapes(self):
-        """Number of shapes in the network.
-
-        Returns
-        -------
-        n_shapes : int
-        """
-        return len(self.shapes)
-
-    @property
     def M(self):
         """Shared functional map dimension.
 
@@ -177,7 +534,6 @@ class FunctionalMapNetwork:
         Returns
         -------
         M : int
-            Size of the functional maps.
         """
         if self._M is not None:
             return self._M
@@ -188,34 +544,8 @@ class FunctionalMapNetwork:
     def M(self, value):
         self._M = value
 
-    def add_edge(self, i, j, fmap):
-        """Add edge.
-
-        Parameters
-        ----------
-        i : int
-            Initial vertex of edge.
-        j : int
-            End vertex of edge.
-        fmap : array-like
-            Functional map between S_i and S_j.
-
-        Returns
-        -------
-        self : FunctionalMapNetwork
-        """
-        self.conn[(i, j)] = fmap
-        return self
-
-    def number_of_edges(self):
-        """Return number of edges in the network.
-
-        Returns
-        -------
-        n_edges : int
-        """
-        return len(self.conn)
-
+    # Override edges/n_edges: conn is the authoritative edge store for FMN
+    # (it tracks all edges, including those whose fmap has not been set yet).
     @property
     def edges(self):
         """Get all edges.
@@ -225,34 +555,36 @@ class FunctionalMapNetwork:
         edges : list[tuple[int; 2]]
         """
         return list(self.conn.keys())
-    
-    def low_resolution(self, min_n_samples=2000):
-        """Wrap each shape in a HierarchicalMesh and update the network.
+
+    @property
+    def n_edges(self):
+        """Return number of edges in the network.
+
+        Returns
+        -------
+        n_edges : int
+        """
+        return len(self.conn)
+
+    def add_edge(self, i, j, fmap=None):
+        """Add a directed edge and optionally attach a functional map.
 
         Parameters
         ----------
-        min_n_samples : int
-            Target vertex count for the low-resolution remeshing.
-        """
-        self.shapes = [
-            HierarchicalMesh.from_registry(mesh, min_n_samples=min_n_samples)
-            for mesh in tqdm(self.shapes)
-        ]
+        i : int
+            Source shape index.
+        j : int
+            Target shape index.
+        fmap : array-like or None
+            Functional map from shape i to shape j. May be set later.
 
-    def compute_spectrum(self, spectrum_size, set_as_basis=True):
-        """Compute the Laplacian spectrum for every shape in the network.
-
-        Parameters
-        ----------
-        spectrum_size : int
-            Number of eigenpairs to compute.
-        set_as_basis : bool
-            Whether to store the result as the shape's basis.
+        Returns
+        -------
+        self : FunctionalMapNetwork
         """
-        for mesh in tqdm(self.shapes):
-            _leaf(mesh).laplacian.find_spectrum(
-                spectrum_size=spectrum_size, set_as_basis=set_as_basis
-            )
+        super().add_edge(i, j)
+        self.conn[(i, j)] = fmap
+        return self
 
     def get_fmap(self, i, j):
         """Get functional map for a given edge.
@@ -260,96 +592,22 @@ class FunctionalMapNetwork:
         Parameters
         ----------
         i : int
-            Initial vertex of edge.
+            Source shape index.
         j : int
-            End vertex of edge.
+            Target shape index.
 
         Returns
         -------
-        self : FunctionalMapNetwork
+        fmap : array-like
         """
         return self.conn[(i, j)]
 
-    def to_networkx(self):
-        """Get networkx representation.
-
-        Keeps only network topology.
-
-        Returns
-        -------
-        graph : nx.Digraph
-            Topology of network.
-        """
-        return nx.DiGraph(self.edges)
-
-    def simply_cycles(self):
-        """Find simple cycles (elementary circuits) of the network.
-
-        Returns
-        -------
-        cycles : list[list[int]]
-            Cycles represented as a list of nodes.
-        """
-        return list(nx.simple_cycles(self.to_networkx()))
-
-    def edges_starting_at_index(self, i):
-        """Get all the edges starting at shape i.
-
-        Returns
-        -------
-        edges : list[tuple[int; 2]]
-        """
-        return filter(self.edges, lambda edge: edge[0] == i)
-
-    def edges_ending_at_index(self, i):
-        """Get all the edges ending at shape i.
-
-        Returns
-        -------
-        edges : list[tuple[int; 2]]
-        """
-        return filter(self.edges, lambda edge: edge[1] == i)
-
-    def add_fully_connected_random_edges(self, N, seed=None):
-        """Add N edges ensuring full connectivity first, without functional maps.
-
-        Parameters
-        ----------
-        N : int
-            Total number of edges to create.
-        seed : int or None
-            Random seed for reproducibility.
-        """
-        if seed is not None:
-            random.seed(seed)
-
-        num_shapes = len(self.shapes)
-        if N < num_shapes - 1:
-            raise ValueError("Not enough edges to ensure full connectivity.")
-
-        tree = nx.random_tree(num_shapes, seed=seed)
-        for i, j in tree.edges():
-            self.conn[(i, j)] = None
-
-        existing_edges = set(self.conn.keys())
-        all_possible_edges = set((i, j) for i in range(num_shapes) for j in range(num_shapes) if i != j)
-        available_edges = list(all_possible_edges - existing_edges)
-
-        additional_edges_needed = N - len(existing_edges)
-        if additional_edges_needed > 0:
-            new_edges = random.sample(available_edges, additional_edges_needed)
-            for i, j in new_edges:
-                self.conn[(i, j)] = None
-
-        return self
-
     def _check_maps(self):
-        """Check that every edge has a functional map set.
+        """Raise if any edge is missing a functional map.
 
         Raises
         ------
         ValueError
-            If the network has no edges or some edges have no functional map set.
         """
         if not self.conn:
             raise ValueError("Functional maps should be set.")
@@ -381,8 +639,7 @@ class FunctionalMapNetwork:
         Parameters
         ----------
         M : int
-            Functional map dimension to use for the orthogonality comparison.
-            If None, uses ``self.M``.
+            Functional map dimension to use. If None, uses ``self.M``.
 
         Returns
         -------
@@ -497,9 +754,6 @@ class FunctionalMapNetwork:
     def get_cycle_weight(self, cycle, M=None):
         """Compute the cost of a 3-cycle.
 
-        The cost is the maximum deviation from the identity map when going
-        through the complete cycle, starting at each of its 3 shapes.
-
         Parameters
         ----------
         cycle : tuple[int, int, int]
@@ -510,7 +764,6 @@ class FunctionalMapNetwork:
         Returns
         -------
         cost : float
-            Cycle cost.
         """
         if M is None:
             M = self.M
@@ -560,10 +813,6 @@ class FunctionalMapNetwork:
     def optimize_icsm(self, verbose=False):
         r"""Solve the linear program for ICSM edge weights.
 
-        Solves :math:`\min w^\top x` subject to :math:`Ax \geq c` and
-        :math:`x \geq 0`. Edges that are not part of any 3-cycle are given
-        zero weight.
-
         Parameters
         ----------
         verbose : bool
@@ -572,7 +821,6 @@ class FunctionalMapNetwork:
         Returns
         -------
         opt_weights : array-like, shape=[n_edges]
-            Non-negative weight for each edge.
         """
         self.compute_3cycle_weights(M=self.M)
 
@@ -600,7 +848,7 @@ class FunctionalMapNetwork:
         weights : scipy.sparse matrix, shape=[n_shapes, n_shapes]
             Precomputed edge weights. If given, ``weight_type`` is ignored.
         weight_type : str
-            "icsm" or "adjacency". Ignored if ``weights`` is given.
+            ``"icsm"`` or ``"adjacency"``. Ignored if ``weights`` is given.
         verbose : bool
             Whether to print progress.
 
@@ -688,7 +936,7 @@ class FunctionalMapNetwork:
         ----------
         equals_id : bool
             If True, the generalized eigenproblem uses the identity as the
-            mass matrix. If False (default), uses ``(1 / n_shapes) * identity``.
+            mass matrix.
         verbose : bool
             Whether to print progress.
 
@@ -738,12 +986,13 @@ class FunctionalMapNetwork:
             evals = _leaf(shape).basis.truncate(self.M).vals
             E_mat += Y.T @ (evals[:, None] * Y)
 
-        eigenvalues, eigenvectors = scipy.linalg.eig(E_mat, b=self.n_shapes * np.eye(m))
-
-        eigenvalues = np.real(eigenvalues)
-        sorting = np.argsort(eigenvalues)
-        eigenvalues = eigenvalues[sorting]
-        eigenvectors = np.real(eigenvectors)[:, sorting]
+        # eigh exploits symmetry and returns real values, but ascending.
+        # Reverse to descending so that cclb_eigenvalues[0] is the largest
+        # (most conformal direction), matching pyFM's convention and the
+        # 1/λ weighting in get_CSD.
+        eigenvalues, eigenvectors = scipy.linalg.eigh(E_mat, b=self.n_shapes * np.eye(m))
+        eigenvalues = eigenvalues[::-1]
+        eigenvectors = eigenvectors[:, ::-1]
 
         self.cclb_eigenvalues = eigenvalues
         self.CCLB = np.array(
@@ -763,9 +1012,7 @@ class FunctionalMapNetwork:
         Returns
         -------
         csd_area : array-like, shape=[m, m]
-            Area CSD expressed in the latent space.
         csd_conformal : array-like, shape=[m, m]
-            Conformal CSD expressed in the latent space.
         """
         fm = self.CCLB[i]
 
@@ -791,7 +1038,6 @@ class FunctionalMapNetwork:
         Returns
         -------
         latent_basis : array-like, shape=[{n_vertices_i, subsample_size}, m]
-            Latent basis.
         """
         cclb = self.CCLB[i]
         vecs = _leaf(self.shapes[i]).basis.truncate(self.M).vecs
@@ -850,16 +1096,19 @@ class FunctionalMapNetwork:
 
         use_sub = not complete and self.subsample is not None
 
+        converter = FmFromP2pConverter()
+
         for i, j in self.edges:
             basis_a = _leaf(self.shapes[i]).basis.truncate(M)
             basis_b = _leaf(self.shapes[j]).basis.truncate(M)
 
-            sub_a = self.subsample[i] if use_sub else None
-            sub_b = self.subsample[j] if use_sub else None
-
-            self.conn[(i, j)] = _fm_from_p2p(
-                self.p2p[(i, j)], basis_a, basis_b, sub_a=sub_a, sub_b=sub_b
-            )
+            if use_sub:
+                self.conn[(i, j)] = _fm_from_p2p(
+                    self.p2p[(i, j)], basis_a, basis_b,
+                    sub_a=self.subsample[i], sub_b=self.subsample[j],
+                )
+            else:
+                self.conn[(i, j)] = converter(self.p2p[(i, j)], basis_a, basis_b)
 
         self._reset_map_attributes()
         return self
@@ -886,16 +1135,13 @@ class FunctionalMapNetwork:
         M_final : int
             Functional map dimension at the end of the iteration.
         isometric : bool
-            Whether to symmetrize bidirectional edges before refinement
-            (ConsistentZoomout-iso strategy).
+            Whether to symmetrize bidirectional edges before refinement.
         weight_type : str
-            "icsm" or "adjacency".
+            ``"icsm"`` or ``"adjacency"``.
         equals_id : bool
-            Whether the CLB optimization uses the identity or
-            ``n_shapes * identity`` as the generalized eigenproblem mass matrix.
+            Whether the CLB optimization uses the identity mass matrix.
         complete : bool
-            Whether pointwise and functional maps are computed using all
-            vertices instead of ``self.subsample``.
+            Whether to use all vertices instead of ``self.subsample``.
         verbose : bool
             Whether to print progress.
 
@@ -944,16 +1190,15 @@ class FunctionalMapNetwork:
             ``(n_shapes, size)`` index array, or ``None``/``0`` to use all
             vertices.
         isometric : bool
-            Whether to use the reduced space strategy of ConsistentZoomout-iso.
+            Whether to use the ConsistentZoomout-iso symmetrization strategy.
         weight_type : str
-            "icsm" or "adjacency".
+            ``"icsm"`` or ``"adjacency"``.
         M_init : int
             Initial functional map dimension. If None, uses ``self.M``.
         cclb_ratio : float
             Size of the CCLB as a ratio of the current dimension M.
         equals_id : bool
-            Whether the CLB optimization uses the identity or
-            ``n_shapes * identity`` as the generalized eigenproblem mass matrix.
+            Whether the CLB optimization uses the identity mass matrix.
         verbose : bool
             Whether to print progress.
 
